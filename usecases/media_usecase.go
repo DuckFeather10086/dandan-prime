@@ -2,8 +2,6 @@ package usecases
 
 import (
 	"crypto/md5"
-	"dandan-prime/config"
-	"dandan-prime/database"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -13,6 +11,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/duckfeather10086/dandan-prime/config"
+	"github.com/duckfeather10086/dandan-prime/database"
 	"gorm.io/gorm"
 )
 
