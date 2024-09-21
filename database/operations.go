@@ -1,14 +1,45 @@
+//go:build !js && !wasm
+// +build !js,!wasm
+
 package database
 
 import (
-	"gorm.io/driver/sqlite"
+	"github.com/glebarez/sqlite"
 	"gorm.io/gorm"
 )
 
-func InitDB() (*gorm.DB, error) {
-	db, err := gorm.Open(sqlite.Open("media_library.db"), &gorm.Config{})
+var DB *gorm.DB
+
+func InitDatabase(dbPath string) error {
+	var err error
+	DB, err = gorm.Open(
+
+		sqlite.Open(dbPath), &gorm.Config{})
+	if err != nil {
+		return err
+	}
+
+	// Migrate the schema
+	return DB.AutoMigrate(&EpisodeInfo{}, &WorkInfo{})
+}
+
+func SaveEpisodeInfo(episode *EpisodeInfo) error {
+	return DB.Create(episode).Error
+}
+
+func UpdateEpisodeInfo(episode *EpisodeInfo) error {
+	return DB.Model(episode).Updates(episode).Error
+}
+
+func UpdateEpisodeInfoByHash(hash string, episode *EpisodeInfo) error {
+	return DB.Model(&EpisodeInfo{}).Where("hash = ?", hash).Updates(episode).Error
+}
+
+func GetEpisodeInfoByHash(hash string) (*EpisodeInfo, error) {
+	var episode EpisodeInfo
+	err := DB.Where("hash = ?", hash).First(&episode).Error
 	if err != nil {
 		return nil, err
 	}
-	return db, nil
+	return &episode, nil
 }

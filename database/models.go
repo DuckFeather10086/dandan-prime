@@ -1,40 +1,43 @@
+// internal/database/models.go
+
 package database
 
-import "gorm.io/gorm"
+import (
+	"gorm.io/gorm"
+)
 
 type EpisodeInfo struct {
 	gorm.Model
-	Name                string
-	Title               string
-	Hash                string
-	WorkName            string
-	Season              int
-	EpisodeNo           int
-	Type                string
-	TypeDescription     string
+	FileName            string `gorm:"size:255;index"`
+	Title               string `gorm:"size:255"`
+	Hash                string `gorm:"size:32;uniqueIndex"`
+	WorkName            string `gorm:"size:255;index"`
+	Season              int    `gorm:"index"`
+	EpisodeNo           int    `gorm:"index"`
+	Type                string `gorm:"size:50"`
+	TypeDescription     string `gorm:"size:255"`
 	Rating              float32
-	AirDate             string
-	WorkID              uint
-	WorkTitle           string
-	WorkDandanplayID    int
-	WorkBangumiID       int
-	EpisodeDandanplayID int
-	EpisodeBangumiID    int
-	Introduce           string
+	AirDate             string `gorm:"size:10"`
+	WorkID              uint   `gorm:"index"`
+	WorkTitle           string `gorm:"size:255"`
+	WorkDandanplayID    int    `gorm:"index"`
+	WorkBangumiID       int    `gorm:"index"`
+	EpisodeDandanplayID int    `gorm:"index"`
+	EpisodeBangumiID    int    `gorm:"index"`
+	Introduce           string `gorm:"type:text"`
 	Length              int
-	Filename            string
-	FilePath            string
+	FilePath            string `gorm:"size:512;uniqueIndex"`
 }
 
 type WorkInfo struct {
 	gorm.Model
-	Name         string
-	DandanplayID int
-	BangumiID    int
+	Name         string `gorm:"size:255;index"`
+	DandanplayID int    `gorm:"uniqueIndex"`
+	BangumiID    int    `gorm:"uniqueIndex"`
 	RateScore    float32
 	Rank         int
 	EpisodeCnt   int
-	Summary      string
-	AirDate      string
-	Platform     string
+	Summary      string `gorm:"type:text"`
+	AirDate      string `gorm:"size:10"`
+	Platform     string `gorm:"size:50"`
 }

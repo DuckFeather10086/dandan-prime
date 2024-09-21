@@ -1,3 +1,6 @@
+//go:build !js && !wasm
+// +build !js,!wasm
+
 package main
 
 import (
@@ -10,6 +13,8 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/duckfeather10086/dandan-prime/database"
+	"github.com/duckfeather10086/dandan-prime/filesacnner"
 	"github.com/labstack/echo/v4"
 )
 
@@ -61,6 +66,18 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
+	// Initialize database
+	if err := database.InitDatabase("media_library.db"); err != nil {
+		log.Fatalf("Failed to initialize database: %v", err)
+	}
+
+	mediaLibraryPath := "/WDBLUE_1"
+
+	if err := filesacnner.ScanAndMatchMedia(mediaLibraryPath); err != nil {
+		log.Fatalf("Error scanning and matching media: %v", err)
+	}
+
+	//filesacnner.ScanAndSaveMedia(mediaLibraryPath)
 
 	// filePath := "O:\\dandan-backend\\[Airota&Nekomoe kissaten&VCB-Studio] Yuru Camp Season 2 [01][Ma10p_1080p][x265_flac].mkv"
 	// info, err := getVideoInfo(filePath)

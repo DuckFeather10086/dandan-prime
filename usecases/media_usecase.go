@@ -137,7 +137,7 @@ func (mu *MediaUsecase) createOrUpdateEpisode(filePath string, match struct {
 		return result.Error
 	}
 
-	episode.Name = filepath.Base(filePath)
+	episode.FileName = filepath.Base(filePath)
 	episode.Title = match.EpisodeTitle
 	episode.WorkName = match.AnimeTitle
 	episode.EpisodeNo = match.Episode
