@@ -157,13 +157,13 @@ func (mu *MediaUsecase) createOrUpdateEpisode(filePath string, match struct {
 
 func (mu *MediaUsecase) createOrUpdateBangumi(animeID int, animeTitle string) error {
 	var bangumi database.BangumiInfo
-	result := mu.db.Where(database.BangumiInfo{DandanplayID: animeID}).FirstOrCreate(&bangumi)
+	result := mu.db.Where(database.BangumiInfo{DandanplayBangumiID: animeID}).FirstOrCreate(&bangumi)
 	if result.Error != nil {
 		return result.Error
 	}
 
 	bangumi.Name = animeTitle
-	bangumi.DandanplayID = animeID
+	bangumi.DandanplayBangumiID = animeID
 
 	result = mu.db.Save(&bangumi)
 	if result.Error != nil {

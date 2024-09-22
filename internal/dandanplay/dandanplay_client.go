@@ -40,8 +40,6 @@ func BatchMatchEpisodes(episodes []database.EpisodeInfo) (constants.BatchMatchRe
 	var matchResp constants.BatchMatchResponse
 	bodyData, err := io.ReadAll(resp.Body)
 
-	fmt.Println("Response body:", string(bodyData))
-
 	if err := json.Unmarshal(bodyData, &matchResp); err != nil {
 		return constants.BatchMatchResponse{}, err
 	}

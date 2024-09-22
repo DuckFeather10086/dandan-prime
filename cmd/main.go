@@ -14,8 +14,7 @@ import (
 	"path/filepath"
 
 	"github.com/duckfeather10086/dandan-prime/database"
-	"github.com/duckfeather10086/dandan-prime/usecase/episodeusecase"
-
+	bangumiusecase "github.com/duckfeather10086/dandan-prime/usecase/bangumiUsecase"
 	"github.com/labstack/echo/v4"
 )
 
@@ -72,9 +71,18 @@ func main() {
 		log.Fatalf("Failed to initialize database: %v", err)
 	}
 
-	mediaLibraryPath := "/WDBLUE_1"
+	//mediaLibraryPath := "/WDBLUE_1"
 
-	if err := episodeusecase.ScanAndMatchMedia(mediaLibraryPath); err != nil {
+	// if err := episodeusecase.ScanAndSaveMedia(mediaLibraryPath); err != nil {
+	// 	log.Fatalf("Error scanning and matching media: %v", err)
+	// }
+
+	// if err := episodeusecase.ScanAndMatchMedia(mediaLibraryPath); err != nil {
+	// 	log.Fatalf("Error scanning and matching media: %v", err)
+	// }
+
+	err := bangumiusecase.InitializeBangumiInfo()
+	if err != nil {
 		log.Fatalf("Error scanning and matching media: %v", err)
 	}
 

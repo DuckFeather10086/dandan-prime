@@ -2,7 +2,8 @@ package constants
 
 const (
 	BANGUMI_API_HOST            = "https://api.bgm.tv/v0"
-	BANGUMI_API_SUBJECT_DETAILS = "/subjects/"
+	BANGUMI_API_SUBJECT_DETAILS = "/subjects"
+	BANGUMI_API_EPISODES        = "/v0/episodes"
 )
 
 type BangumiSubjectResponse struct {
@@ -22,10 +23,6 @@ type BangumiSubjectResponse struct {
 		Name  string `json:"name"`
 		Count int    `json:"count"`
 	} `json:"tags"`
-	Infobox []struct {
-		Key   string `json:"key"`
-		Value string `json:"value"`
-	} `json:"infobox"`
 	Rating struct {
 		Rank  int `json:"rank"`
 		Total int `json:"total"`
@@ -58,4 +55,27 @@ type BangumiSubjectResponse struct {
 	Locked  bool `json:"locked"`
 	NSFW    bool `json:"nsfw"`
 	Type    int  `json:"type"`
+}
+
+type BangumiEpisodesResponse struct {
+	Data   []BangumiEpisode `json:"data"`
+	Total  int              `json:"total"`
+	Limit  int              `json:"limit"`
+	Offset int              `json:"offset"`
+}
+
+type BangumiEpisode struct {
+	Airdate         string `json:"airdate"`
+	Name            string `json:"name"`
+	NameCN          string `json:"name_cn"`
+	Duration        string `json:"duration"`
+	Desc            string `json:"desc"`
+	Ep              int    `json:"ep"`
+	Sort            int    `json:"sort"`
+	ID              int    `json:"id"`
+	SubjectID       int    `json:"subject_id"`
+	Comment         int    `json:"comment"`
+	Type            int    `json:"type"`
+	Disc            int    `json:"disc"`
+	DurationSeconds int    `json:"duration_seconds"`
 }

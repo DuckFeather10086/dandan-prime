@@ -8,6 +8,7 @@ import (
 	"log"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/duckfeather10086/dandan-prime/database"
 	"github.com/duckfeather10086/dandan-prime/internal/bangumi"
@@ -57,20 +58,23 @@ func InitializeBangumiInfo() error {
 			log.Println("Failed to get bangumi info , err:", err)
 			continue
 		}
+		log.Println(fetchedBangumiInfo)
 
 		bangumiInfo := database.BangumiInfo{
-			BangumiID:     fetchedBangumiInfo.ID,
-			DandanplayID:  bangumiID,
-			Name:          fetchedBangumiInfo.Name,
-			Summary:       fetchedBangumiInfo.Summary,
-			Rank:          fetchedBangumiInfo.Rating.Rank,
-			TotalEpisodes: fetchedBangumiInfo.TotalEpisodes,
-			RateScore:     fetchedBangumiInfo.Rating.Score,
+			BangumiSubjectID:    fetchedBangumiInfo.ID,
+			DandanplayBangumiID: bangumiID,
+			Name:                fetchedBangumiInfo.Name,
+			Summary:             fetchedBangumiInfo.Summary,
+			Rank:                fetchedBangumiInfo.Rating.Rank,
+			TotalEpisodes:       fetchedBangumiInfo.TotalEpisodes,
+			RateScore:           fetchedBangumiInfo.Rating.Score,
 		}
 
 		database.DB.Model(&database.BangumiInfo{}).Save(&bangumiInfo)
 
-		database.DB.Model(&database.EpisodeInfo{}).Where("dandanplay_bangumi_id = ?", dandanPlayAnimeID).Update("bangumi_id", fetchedBangumiInfo.ID)
+		database.DB.Model(&database.EpisodeInfo{}).Where("dandanplay_bangumi_id = ?", dandanPlayAnimeID).Update("bangumi_bangumi_id", fetchedBangumiInfo.ID)
+
+		time.Sleep(time.Duration(0.2 * float64(time.Second)))
 	}
 
 	return nil

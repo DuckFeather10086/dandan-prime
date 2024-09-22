@@ -11,6 +11,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/duckfeather10086/dandan-prime/database"
@@ -93,7 +94,11 @@ func ScanAndMatchMedia(rootPath string) error {
 
 		for _, result := range matchResp.Matches {
 			if result.Success {
-				log.Printf("Matched episode: %s", result.Result.EpisodeTitle)
+				episodeNO, err := strconv.Atoi(strings.TrimLeft(fmt.Sprintf("%04d", result.Result.EpisodeID%10000), "0"))
+				if err != nil {
+					log.Printf("Failed to convert episode number: %v", err)
+					continue
+				}
 				database.UpdateEpisodeInfoByHash(result.FileHash, &database.EpisodeInfo{
 					DandanplayBangumiID: result.Result.AnimeID,
 					BangumiTitle:        result.Result.AnimeTitle,
@@ -101,6 +106,7 @@ func ScanAndMatchMedia(rootPath string) error {
 					Type:                result.Result.Type,
 					TypeDescription:     result.Result.TypeDescription,
 					EpisodeDandanplayID: result.Result.EpisodeID,
+					EpisodeNo:           episodeNO,
 				})
 			}
 		}
