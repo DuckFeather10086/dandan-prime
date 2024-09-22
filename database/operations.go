@@ -20,10 +20,10 @@ func InitDatabase(dbPath string) error {
 	}
 
 	// Migrate the schema
-	return DB.AutoMigrate(&EpisodeInfo{}, &WorkInfo{})
+	return DB.AutoMigrate(&EpisodeInfo{}, &BangumiInfo{})
 }
 
-func SaveEpisodeInfo(episode *EpisodeInfo) error {
+func CreateEpisodeInfo(episode *EpisodeInfo) error {
 	return DB.Create(episode).Error
 }
 

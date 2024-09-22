@@ -1,7 +1,7 @@
 //go:build !js && !wasm
 // +build !js,!wasm
 
-package filesacnusecase
+package episodeusecase
 
 import (
 	"crypto/md5"
@@ -53,7 +53,7 @@ func ScanAndSaveMedia(rootPath string) error {
 					// Other fields will be filled later when we integrate with DandanPlay API
 				}
 
-				if err := database.SaveEpisodeInfo(episode); err != nil {
+				if err := database.CreateEpisodeInfo(episode); err != nil {
 					return fmt.Errorf("error saving episode info for %s: %v", path, err)
 				}
 
@@ -95,8 +95,8 @@ func ScanAndMatchMedia(rootPath string) error {
 			if result.Success {
 				log.Printf("Matched episode: %s", result.Result.EpisodeTitle)
 				database.UpdateEpisodeInfoByHash(result.FileHash, &database.EpisodeInfo{
-					WorkDandanplayID:    result.Result.AnimeID,
-					WorkTitle:           result.Result.AnimeTitle,
+					DandanplayBangumiID: result.Result.AnimeID,
+					BangumiTitle:        result.Result.AnimeTitle,
 					Title:               result.Result.EpisodeTitle,
 					Type:                result.Result.Type,
 					TypeDescription:     result.Result.TypeDescription,

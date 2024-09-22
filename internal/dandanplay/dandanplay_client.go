@@ -55,22 +55,22 @@ func BatchMatchEpisodes(episodes []database.EpisodeInfo) (constants.BatchMatchRe
 	return matchResp, nil
 }
 
-func FetchBangumiDetails(workId int) (constants.WorkDetailsResponse, error) {
-	resp, err := http.Get(fmt.Sprintf("%s/%d", constants.DANDANPLAY_API_WORK_DETAILS, workId))
+func FetchBangumiDetails(bangumiID int) (constants.BangumiDetailsResponse, error) {
+	resp, err := http.Get(fmt.Sprintf("%s/%d", constants.DANDANPLAY_API_WORK_DETAILS, bangumiID))
 	if err != nil {
-		return constants.WorkDetailsResponse{}, err
+		return constants.BangumiDetailsResponse{}, err
 	}
 	defer resp.Body.Close()
 
-	var workDetailsResp constants.WorkDetailsResponse
+	var bangumiDetailsResp constants.BangumiDetailsResponse
 	bodyData, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return constants.WorkDetailsResponse{}, err
+		return constants.BangumiDetailsResponse{}, err
 	}
 
-	if err := json.Unmarshal(bodyData, &workDetailsResp); err != nil {
-		return constants.WorkDetailsResponse{}, err
+	if err := json.Unmarshal(bodyData, &bangumiDetailsResp); err != nil {
+		return constants.BangumiDetailsResponse{}, err
 	}
 
-	return workDetailsResp, nil
+	return bangumiDetailsResp, nil
 }

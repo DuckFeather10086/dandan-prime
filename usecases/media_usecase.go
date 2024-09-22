@@ -139,11 +139,11 @@ func (mu *MediaUsecase) createOrUpdateEpisode(filePath string, match struct {
 
 	episode.FileName = filepath.Base(filePath)
 	episode.Title = match.EpisodeTitle
-	episode.WorkName = match.AnimeTitle
+	episode.BangumiTitle = match.AnimeTitle
 	episode.EpisodeNo = match.Episode
 	episode.Type = match.Type
 	episode.TypeDescription = match.TypeDescription
-	episode.WorkDandanplayID = match.AnimeID
+	episode.DandanplayBangumiID = match.AnimeID
 	episode.EpisodeDandanplayID = match.EpisodeID
 	episode.FilePath = filePath
 
@@ -152,20 +152,20 @@ func (mu *MediaUsecase) createOrUpdateEpisode(filePath string, match struct {
 		return result.Error
 	}
 
-	return mu.createOrUpdateWork(match.AnimeID, match.AnimeTitle)
+	return mu.createOrUpdateBangumi(match.AnimeID, match.AnimeTitle)
 }
 
-func (mu *MediaUsecase) createOrUpdateWork(animeID int, animeTitle string) error {
-	var work database.WorkInfo
-	result := mu.db.Where(database.WorkInfo{DandanplayID: animeID}).FirstOrCreate(&work)
+func (mu *MediaUsecase) createOrUpdateBangumi(animeID int, animeTitle string) error {
+	var bangumi database.BangumiInfo
+	result := mu.db.Where(database.BangumiInfo{DandanplayID: animeID}).FirstOrCreate(&bangumi)
 	if result.Error != nil {
 		return result.Error
 	}
 
-	work.Name = animeTitle
-	work.DandanplayID = animeID
+	bangumi.Name = animeTitle
+	bangumi.DandanplayID = animeID
 
-	result = mu.db.Save(&work)
+	result = mu.db.Save(&bangumi)
 	if result.Error != nil {
 		return result.Error
 	}
@@ -179,10 +179,10 @@ func (mu *MediaUsecase) GetEpisodes() ([]database.EpisodeInfo, error) {
 	return episodes, result.Error
 }
 
-func (mu *MediaUsecase) GetWorks() ([]database.WorkInfo, error) {
-	var works []database.WorkInfo
-	result := mu.db.Find(&works)
-	return works, result.Error
+func (mu *MediaUsecase) GetBangumis() ([]database.BangumiInfo, error) {
+	var bangumis []database.BangumiInfo
+	result := mu.db.Find(&bangumis)
+	return bangumis, result.Error
 }
 
 func getMediaFiles(root string, allowedExtensions []string) ([]string, error) {

@@ -3,7 +3,7 @@
 
 package constants
 
-// Constants for fetching work details
+// Constants for fetching bangumi details
 const DANDANPLAY_API_WORK_DETAILS = "https://api.dandanplay.net/api/v2/bangumi"
 
 type Title struct {
@@ -69,7 +69,7 @@ type BangumiInfo struct {
 	Rating          float64          `json:"rating"`
 }
 
-type WorkDetailsResponse struct {
+type BangumiDetailsResponse struct {
 	Bangumi      BangumiInfo `json:"bangumi"`
 	ErrorCode    int         `json:"errorCode"`
 	Success      bool        `json:"success"`

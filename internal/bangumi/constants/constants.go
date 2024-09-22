@@ -1,8 +1,8 @@
 package constants
 
 const (
-	BangumiAPIBaseURL = "https://api.bgm.tv/v0"
-	SubjectsEndpoint  = "/subjects"
+	BANGUMI_API_HOST            = "https://api.bgm.tv/v0"
+	BANGUMI_API_SUBJECT_DETAILS = "/subjects/"
 )
 
 type BangumiSubjectResponse struct {

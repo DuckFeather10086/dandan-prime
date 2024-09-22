@@ -14,7 +14,8 @@ import (
 	"path/filepath"
 
 	"github.com/duckfeather10086/dandan-prime/database"
-	"github.com/duckfeather10086/dandan-prime/filesacnner"
+	"github.com/duckfeather10086/dandan-prime/usecase/episodeusecase"
+
 	"github.com/labstack/echo/v4"
 )
 
@@ -73,7 +74,7 @@ func main() {
 
 	mediaLibraryPath := "/WDBLUE_1"
 
-	if err := filesacnner.ScanAndMatchMedia(mediaLibraryPath); err != nil {
+	if err := episodeusecase.ScanAndMatchMedia(mediaLibraryPath); err != nil {
 		log.Fatalf("Error scanning and matching media: %v", err)
 	}
 
