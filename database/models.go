@@ -26,7 +26,7 @@ type EpisodeInfo struct {
 	EpisodeBangumiID    int    `gorm:"index;not null;default:0"`
 	Introduce           string `gorm:"type:text"`
 	Length              int
-	FilePath            string `gorm:"size:512;uniqueIndex"`
+	FilePath            string `gorm:"size:512;index"`
 }
 
 type BangumiInfo struct {
@@ -38,6 +38,6 @@ type BangumiInfo struct {
 	Rank                int
 	TotalEpisodes       int
 	Summary             string `gorm:"type:text"`
-	AirDate             string `gorm:"size:10"`
+	AirDate             string `gorm:"size:20"`
 	Platform            string `gorm:"size:50"`
 }

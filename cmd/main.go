@@ -13,9 +13,12 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/duckfeather10086/dandan-prime/config"
+	"github.com/duckfeather10086/dandan-prime/controllers"
 	"github.com/duckfeather10086/dandan-prime/database"
 	bangumiusecase "github.com/duckfeather10086/dandan-prime/usecase/bangumiUsecase"
 	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
 )
 
 type AnimeData struct {
@@ -66,22 +69,19 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	// Initialize database
+	//Initialize database
 	if err := database.InitDatabase("media_library.db"); err != nil {
 		log.Fatalf("Failed to initialize database: %v", err)
 	}
-
-	//mediaLibraryPath := "/WDBLUE_1"
-
 	// if err := episodeusecase.ScanAndSaveMedia(mediaLibraryPath); err != nil {
-	// 	log.Fatalf("Error scanning and matching media: %v", err)
+	// 	log.Println("Error scanning and matching media: %v", err)
 	// }
 
 	// if err := episodeusecase.ScanAndMatchMedia(mediaLibraryPath); err != nil {
 	// 	log.Fatalf("Error scanning and matching media: %v", err)
 	// }
 
-	err := bangumiusecase.InitializeBangumiInfo()
+	err := bangumiusecase.IncrementalUpdateBangumiInfo()
 	if err != nil {
 		log.Fatalf("Error scanning and matching media: %v", err)
 	}
@@ -113,16 +113,23 @@ func main() {
 
 	e := echo.New()
 
-	// 添加一些有用的中间件
+	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
+		AllowOrigins: []string{"*"},
+		AllowMethods: []string{echo.GET, echo.HEAD, echo.PUT, echo.PATCH, echo.POST, echo.DELETE},
+	}))
 
 	// 配置静态文件服务
-	e.Static("/videos", "./videos")
+	e.Static("/videos", config.DefaultMediaLibraryPath)
 
 	// 配置视频流媒体服务
 	e.GET("/stream/:filename", streamHandler)
 
+	e.GET("/api/bangumi/:bangumi_subject_id/contents", controllers.GetBangumiContentsByBangumiID)
+
+	e.GET("/api/bangumi/list", controllers.GetBangumiInfoList)
+
 	// 启动服务器
-	if err := e.Start(":8080"); err != nil {
+	if err := e.Start(":1234"); err != nil {
 		log.Fatal(err)
 	}
 

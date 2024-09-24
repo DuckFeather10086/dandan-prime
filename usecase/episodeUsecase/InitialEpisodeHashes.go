@@ -39,23 +39,22 @@ func ScanAndSaveMedia(rootPath string) error {
 					return fmt.Errorf("error calculating hash for %s: %v", path, err)
 				}
 
-				// Check if the episode already exists in the database
-				_, err = database.GetEpisodeInfoByHash(hash)
-				if err == nil {
-					fmt.Printf("File already exists in database: %s\n", path)
-					return nil
-				}
-
 				// If the episode doesn't exist, create a new one
 				episode := &database.EpisodeInfo{
 					FileName: filepath.Base(path),
 					Hash:     hash,
-					FilePath: path,
+					FilePath: filepath.Dir(path),
 					// Other fields will be filled later when we integrate with DandanPlay API
 				}
 
-				if err := database.CreateEpisodeInfo(episode); err != nil {
-					return fmt.Errorf("error saving episode info for %s: %v", path, err)
+				// Check if the episode already exists in the database
+				_, err = database.GetEpisodeInfoByHash(hash)
+				if err == nil {
+					database.UpdateEpisodeInfoByHash(hash, episode)
+				} else {
+					if err := database.CreateEpisodeInfo(episode); err != nil {
+						return fmt.Errorf("error saving episode info for %s: %v", path, err)
+					}
 				}
 
 				fmt.Printf("Saved new episode: %s\n", path)

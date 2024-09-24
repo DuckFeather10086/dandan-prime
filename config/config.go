@@ -1,15 +1,14 @@
 package config
 
-import "os"
+const (
+	DefaultMediaLibraryPath = "/WDBLUE_1"
+)
 
-type Config struct {
-	MediaLibraryPath  string
-	AllowedExtensions []string
-}
+var DefaultAllowedExtensions = []string{".mkv", ".mp4"}
 
-func GetConfig() *Config {
-	return &Config{
-		MediaLibraryPath:  os.Getenv("MEDIA_LIBRARY_PATH"),
-		AllowedExtensions: []string{".mkv", ".mp4"},
-	}
-}
+// func GetConfig() *Config {
+// 	return &Config{
+// 		MediaLibraryPath:  os.Getenv("MEDIA_LIBRARY_PATH"),
+// 		AllowedExtensions: []string{".mkv", ".mp4"},
+// 	}
+// }

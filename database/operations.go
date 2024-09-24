@@ -24,7 +24,7 @@ func InitDatabase(dbPath string) error {
 }
 
 func CreateEpisodeInfo(episode *EpisodeInfo) error {
-	return DB.Create(episode).Error
+	return DB.Save(episode).Error
 }
 
 func UpdateEpisodeInfo(episode *EpisodeInfo) error {
