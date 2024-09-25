@@ -20,13 +20,14 @@ type BangumiInfo struct {
 	BangumiSubjectID    int       `json:"bangumi_subject_id"`
 	DandanplayBangumiID int       `json:"dandanpaly_bangumi_id"`
 	ImageURL            string    `json:"image_url"`
+	Summary             string    `json:"summary"`
 	RateScore           float64   `json:"rate_score"`
 	TotalEpisodes       int       `json:"total_episodes"`
 	AirDate             string    `json:"air_date"`
 	Platform            string    `json:"platform"`
 	Title               string    `json:"title"`
 	Directory           string    `json:"directory"`
-	Contents            []Content `json:"contents"`
+	Episodes            []Content `json:"episodes"`
 }
 
 // Content 结构体用于存储作品目录下的内容信息
@@ -51,11 +52,11 @@ func GetBangumiContentsByBangumiID(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to get episode info"})
 	}
 
-	contents := make([]Content, 0, len(episodeInfos))
+	episodes := make([]Content, 0, len(episodeInfos))
 
 	for _, episodeInfo := range episodeInfos {
 
-		contents = append(contents, Content{
+		episodes = append(episodes, Content{
 			Title:        episodeInfo.Title,
 			Type:         episodeInfo.TypeDescription,
 			Introduction: episodeInfo.Introduce,
@@ -80,7 +81,9 @@ func GetBangumiContentsByBangumiID(c echo.Context) error {
 		ID:            bangumiInfo.BangumiSubjectID,
 		Title:         bangumiInfo.Name,
 		Directory:     relativePath,
-		Contents:      contents,
+		ImageURL:      fmt.Sprintf("https://api.bgm.tv/v0/subjects/%d/image?type=large", bangumiInfo.BangumiSubjectID),
+		Summary:       bangumiInfo.Summary,
+		Episodes:      episodes,
 		RateScore:     bangumiInfo.RateScore,
 		TotalEpisodes: bangumiInfo.TotalEpisodes,
 		AirDate:       bangumiInfo.AirDate,
