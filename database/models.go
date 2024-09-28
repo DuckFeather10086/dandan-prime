@@ -25,6 +25,7 @@ type EpisodeInfo struct {
 	EpisodeDandanplayID int    `gorm:"index;not null;default:0"`
 	EpisodeBangumiID    int    `gorm:"index;not null;default:0"`
 	Introduce           string `gorm:"type:text"`
+	Subtitles           string `gorm:"type:text"`
 	Length              int
 	FilePath            string `gorm:"size:512;index"`
 }

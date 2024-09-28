@@ -1,3 +1,6 @@
+//go:build !js && !wasm
+// +build !js,!wasm
+
 package episodeusecase
 
 import "github.com/duckfeather10086/dandan-prime/database"

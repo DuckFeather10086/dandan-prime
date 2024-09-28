@@ -18,7 +18,8 @@ import (
 	"github.com/duckfeather10086/dandan-prime/internal/dandanplay"
 )
 
-var allowedExtensions = []string{".mkv", ".mp4"}
+var allowedExtensionsVideo = []string{".mkv", ".mp4"}
+var allowedExtensionsSubtitle = []string{".ass", ".ssa", ".srt", ".sub"}
 
 const BATCH_SIZE = 32
 
@@ -32,7 +33,7 @@ func ScanAndSaveMedia(rootPath string) error {
 		}
 
 		ext := strings.ToLower(filepath.Ext(path))
-		for _, allowedExt := range allowedExtensions {
+		for _, allowedExt := range allowedExtensionsVideo {
 			if ext == allowedExt {
 				hash, err := CalculateFileHash(path)
 				if err != nil {
@@ -113,6 +114,66 @@ func ScanAndMatchMedia(rootPath string) error {
 
 	fmt.Println("Finished matching episodes.")
 	return nil
+}
+
+func ScanAndMatchSubtitles() error {
+	var episodes []database.EpisodeInfo
+	if err := database.DB.Find(&episodes).Error; err != nil {
+		return err
+	}
+
+	for _, episode := range episodes {
+		subtitles := []string{}
+		episodeDir := filepath.Dir(filepath.Join(episode.FilePath, episode.FileName))
+
+		err := filepath.Walk(episodeDir, func(path string, info os.FileInfo, err error) error {
+			if err != nil {
+				return err
+			}
+			if info.IsDir() {
+				return nil
+			}
+
+			ext := strings.ToLower(filepath.Ext(path))
+			if !contains(allowedExtensionsSubtitle, ext) {
+				return nil
+			}
+
+			subtitleFileName := filepath.Base(path)
+			episodeFileName := strings.TrimSuffix(episode.FileName, filepath.Ext(episode.FileName))
+
+			if strings.HasPrefix(subtitleFileName, episodeFileName) {
+				subtitles = append(subtitles, subtitleFileName)
+			}
+
+			return nil
+		})
+
+		if err != nil {
+			log.Printf("error scanning subtitles for %s: %v \n", episode.FileName, err)
+			continue
+		}
+
+		if len(subtitles) > 0 {
+			subtitlesStr := strings.Join(subtitles, ";")
+			if err := database.UpdateEpisodeInfoByHash(episode.Hash, &database.EpisodeInfo{
+				Subtitles: subtitlesStr,
+			}); err != nil {
+				return fmt.Errorf("error updating subtitles for %s: %v", episode.FileName, err)
+			}
+		}
+	}
+
+	return nil
+}
+
+func contains(slice []string, item string) bool {
+	for _, s := range slice {
+		if s == item {
+			return true
+		}
+	}
+	return false
 }
 
 func CalculateFileHash(filePath string) (string, error) {

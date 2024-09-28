@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"path/filepath"
 	"strconv"
+	"strings"
 
 	"github.com/duckfeather10086/dandan-prime/config"
 	bangumiusecase "github.com/duckfeather10086/dandan-prime/usecase/bangumiUsecase"
@@ -27,15 +28,19 @@ type BangumiInfo struct {
 	Platform            string    `json:"platform"`
 	Title               string    `json:"title"`
 	Directory           string    `json:"directory"`
-	Episodes            []Content `json:"episodes"`
+	Episodes            []Episode `json:"episodes"`
 }
 
-// Content 结构体用于存储作品目录下的内容信息
-type Content struct {
-	Title        string `json:"title"`
-	Type         string `json:"type"`         // 例如: "video", "image", "subtitle" 等
-	Introduction string `json:"introduction"` //
-	FileName     string `json:"file_name"`
+// Episode 结构体用于存储作品目录下的内容信息
+type Episode struct {
+	ID                  uint     `json:"id"`
+	DandanplayEpisodeID int      `json:"dandanpaly_episode_id"`
+	Title               string   `json:"title"`
+	Type                string   `json:"type"`         // 例如: "video", "image", "subtitle" 等
+	Introduction        string   `json:"introduction"` //
+	FileName            string   `json:"file_name"`
+	Subtitles           []string `json:"subtitles"`
+	FilePath            string   `json:"file_path"`
 }
 
 func GetBangumiContentsByBangumiID(c echo.Context) error {
@@ -52,15 +57,23 @@ func GetBangumiContentsByBangumiID(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to get episode info"})
 	}
 
-	episodes := make([]Content, 0, len(episodeInfos))
+	episodes := make([]Episode, 0, len(episodeInfos))
 
 	for _, episodeInfo := range episodeInfos {
+		subtitles := []string{}
+		if episodeInfo.Subtitles != "" {
+			subtitles = strings.Split(episodeInfo.Subtitles, ";")
+		}
 
-		episodes = append(episodes, Content{
-			Title:        episodeInfo.Title,
-			Type:         episodeInfo.TypeDescription,
-			Introduction: episodeInfo.Introduce,
-			FileName:     episodeInfo.FileName,
+		episodes = append(episodes, Episode{
+			ID:                  episodeInfo.ID,
+			DandanplayEpisodeID: episodeInfo.EpisodeDandanplayID,
+			Title:               episodeInfo.Title,
+			Type:                episodeInfo.TypeDescription,
+			Introduction:        episodeInfo.Introduce,
+			FileName:            episodeInfo.FileName,
+			FilePath:            episodeInfo.FilePath,
+			Subtitles:           subtitles,
 		})
 	}
 
@@ -115,4 +128,38 @@ func GetBangumiInfoList(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, bangumiList)
+}
+
+func GetEpisodeInfoByID(c echo.Context) error {
+	idStr := c.Param("id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid episode ID"})
+	}
+
+	episodeInfo, err := episodeusecase.GetEpisodeInfoById(id)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to get episode info"})
+	}
+
+	// Remove the leading path from episodeInfo.FilePath
+	episodeInfo.FilePath = filepath.Base(episodeInfo.FilePath)
+
+	subtitles := []string{}
+	if episodeInfo.Subtitles != "" {
+		subtitles = strings.Split(episodeInfo.Subtitles, ";")
+	}
+
+	resEpisodeINfo := Episode{
+		ID:                  episodeInfo.ID,
+		DandanplayEpisodeID: episodeInfo.EpisodeDandanplayID,
+		Title:               episodeInfo.Title,
+		Type:                episodeInfo.TypeDescription,
+		Introduction:        episodeInfo.Introduce,
+		FileName:            episodeInfo.FileName,
+		FilePath:            episodeInfo.FilePath,
+		Subtitles:           subtitles,
+	}
+
+	return c.JSON(http.StatusOK, resEpisodeINfo)
 }

@@ -1,17 +1,18 @@
+//go:build !js && !wasm
+// +build !js,!wasm
+
 package usecases
 
 import (
 	"crypto/md5"
 	"encoding/hex"
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
 
-	"github.com/duckfeather10086/dandan-prime/config"
 	"github.com/duckfeather10086/dandan-prime/database"
 	"gorm.io/gorm"
 )
@@ -37,57 +38,6 @@ type DandanplayResponse struct {
 		TypeDescription string `json:"typeDescription"`
 		Episode         int    `json:"episode"`
 	} `json:"matches"`
-}
-
-func (mu *MediaUsecase) ScrapeDandanplay() error {
-	cfg := config.GetConfig()
-	files, err := getMediaFiles(cfg.MediaLibraryPath, cfg.AllowedExtensions)
-	if err != nil {
-		return err
-	}
-
-	for i := 0; i < len(files); i += 32 {
-		end := i + 32
-		if end > len(files) {
-			end = len(files)
-		}
-		batch := files[i:end]
-
-		requests := make([]DandanplayRequest, len(batch))
-		for j, file := range batch {
-			hash, err := calculateFileHash(file)
-			if err != nil {
-				continue
-			}
-			fileInfo, err := os.Stat(file)
-			if err != nil {
-				continue
-			}
-			requests[j] = DandanplayRequest{
-				FileName:  filepath.Base(file),
-				FileHash:  hash,
-				FileSize:  fileInfo.Size(),
-				MatchMode: "hashAndFileName",
-			}
-		}
-
-		responses, err := mu.callDandanplayAPI(requests)
-		if err != nil {
-			return err
-		}
-
-		for j, response := range responses {
-			if len(response.Matches) > 0 {
-				match := response.Matches[0]
-				err := mu.createOrUpdateEpisode(batch[j], match)
-				if err != nil {
-					fmt.Printf("Error updating episode: %v\n", err)
-				}
-			}
-		}
-	}
-
-	return nil
 }
 
 func (mu *MediaUsecase) callDandanplayAPI(requests []DandanplayRequest) ([]DandanplayResponse, error) {

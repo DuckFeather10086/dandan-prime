@@ -16,7 +16,7 @@ import (
 	"github.com/duckfeather10086/dandan-prime/config"
 	"github.com/duckfeather10086/dandan-prime/controllers"
 	"github.com/duckfeather10086/dandan-prime/database"
-	bangumiusecase "github.com/duckfeather10086/dandan-prime/usecase/bangumiUsecase"
+	episodeusecase "github.com/duckfeather10086/dandan-prime/usecase/episodeUsecase"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 )
@@ -81,7 +81,12 @@ func main() {
 	// 	log.Fatalf("Error scanning and matching media: %v", err)
 	// }
 
-	err := bangumiusecase.IncrementalUpdateBangumiInfo()
+	// err := bangumiusecase.IncrementalUpdateBangumiInfo()
+	// if err != nil {
+	// 	log.Fatalf("Error scanning and matching media: %v", err)
+	// }
+
+	err := episodeusecase.ScanAndMatchSubtitles()
 	if err != nil {
 		log.Fatalf("Error scanning and matching media: %v", err)
 	}
@@ -120,6 +125,7 @@ func main() {
 
 	// 配置静态文件服务
 	e.Static("/videos", config.DefaultMediaLibraryPath)
+	e.Static("/subtitles", config.DefaultMediaLibraryPath)
 
 	// 配置视频流媒体服务
 	e.GET("/stream/:filename", streamHandler)
@@ -127,6 +133,8 @@ func main() {
 	e.GET("/api/bangumi/:bangumi_subject_id/contents", controllers.GetBangumiContentsByBangumiID)
 
 	e.GET("/api/bangumi/list", controllers.GetBangumiInfoList)
+
+	e.GET("/api/bangumi/episode/:id", controllers.GetEpisodeInfoByID)
 
 	// 启动服务器
 	if err := e.Start(":1234"); err != nil {
