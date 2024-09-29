@@ -107,3 +107,17 @@ type BatchMatchResponse struct {
 	Success bool           `json:"success"`
 	Matches []MatchResults `json:"results"`
 }
+
+// constants for fetching danmaku
+const DANDANPLAY_API_COMMENT = "https://api.dandanplay.net/api/v2/comment"
+
+type DanmakuResponse struct {
+	Count    int       `json:"count"`
+	Comments []Comment `json:"comments"`
+}
+
+type Comment struct {
+	Cid int    `json:"cid"`
+	P   string `json:"p"`
+	M   string `json:"m"`
+}

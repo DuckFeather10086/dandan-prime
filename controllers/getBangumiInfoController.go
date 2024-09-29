@@ -5,12 +5,15 @@ package controllers
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"path/filepath"
+	"sort"
 	"strconv"
 	"strings"
 
 	"github.com/duckfeather10086/dandan-prime/config"
+	"github.com/duckfeather10086/dandan-prime/internal/dandanplay"
 	bangumiusecase "github.com/duckfeather10086/dandan-prime/usecase/bangumiUsecase"
 	episodeusecase "github.com/duckfeather10086/dandan-prime/usecase/episodeUsecase"
 	"github.com/labstack/echo/v4"
@@ -41,6 +44,17 @@ type Episode struct {
 	FileName            string   `json:"file_name"`
 	Subtitles           []string `json:"subtitles"`
 	FilePath            string   `json:"file_path"`
+}
+
+type DanmakuInfo struct {
+	Danmakus []Danmaku `json:"danmakus"`
+}
+
+type Danmaku struct {
+	Time  int    `json:"time"`
+	Text  string `json:"text"`
+	Color string `json:"color"`
+	Type  string `json:"type"` // top' | 'bottom' | 'scroll'
 }
 
 func GetBangumiContentsByBangumiID(c echo.Context) error {
@@ -162,4 +176,71 @@ func GetEpisodeInfoByID(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, resEpisodeINfo)
+}
+
+func GetDanmakuByDandanplayEpisodeID(c echo.Context) error {
+	episodeIDStr := c.Param("episode_id")
+	log.Println(episodeIDStr)
+	episodeID, err := strconv.Atoi(episodeIDStr)
+	log.Println(episodeID)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid episode ID"})
+	}
+
+	episodeInfo, err := episodeusecase.GetEpisodeInfoById(episodeID)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to get episode info"})
+	}
+
+	danmakuFromDandanplay, err := dandanplay.FetchDanmakuFromDandanplay(episodeInfo.EpisodeDandanplayID)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to fetch danmaku from dandanplay"})
+	}
+
+	// Convert dandanplay danmaku to BulletOption format
+	bulletOptions := make([]Danmaku, 0, len(danmakuFromDandanplay.Comments))
+	if danmakuFromDandanplay.Comments != nil {
+		for _, d := range danmakuFromDandanplay.Comments {
+			parts := strings.Split(d.P, ",")
+			if len(parts) < 3 {
+				continue // Skip invalid danmaku
+			}
+
+			time, _ := strconv.ParseFloat(parts[0], 64)
+			mode, _ := strconv.Atoi(parts[1])
+			color, _ := strconv.Atoi(parts[2])
+
+			danmaku := Danmaku{
+				Time:  int(time), // Convert to milliseconds
+				Text:  d.M,
+				Color: fmt.Sprintf("#%06X", color),
+				Type:  getDanmakuType(mode),
+			}
+
+			// Find the correct position to insert the new danmaku
+			insertIndex := sort.Search(len(bulletOptions), func(i int) bool {
+				return bulletOptions[i].Time > danmaku.Time
+			})
+
+			// Insert the new danmaku at the correct position
+			bulletOptions = append(bulletOptions[:insertIndex], append([]Danmaku{danmaku}, bulletOptions[insertIndex:]...)...)
+		}
+	}
+
+	response := DanmakuInfo{
+		Danmakus: bulletOptions,
+	}
+
+	return c.JSON(http.StatusOK, response)
+}
+
+func getDanmakuType(mode int) string {
+	switch mode {
+	case 4:
+		return "bottom"
+	case 5:
+		return "top"
+	default:
+		return "scroll"
+	}
 }

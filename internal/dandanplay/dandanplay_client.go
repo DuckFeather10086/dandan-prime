@@ -72,3 +72,27 @@ func FetchBangumiDetails(bangumiID int) (constants.BangumiDetailsResponse, error
 
 	return bangumiDetailsResp, nil
 }
+
+func FetchDanmakuFromDandanplay(episodeID int) (constants.DanmakuResponse, error) {
+	url := fmt.Sprintf("%s/%d?withRelated=true", constants.DANDANPLAY_API_COMMENT, episodeID)
+
+	log.Println(url)
+
+	resp, err := http.Get(url)
+	if err != nil {
+		return constants.DanmakuResponse{}, err
+	}
+	defer resp.Body.Close()
+
+	var danmakuResp constants.DanmakuResponse
+	bodyData, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return constants.DanmakuResponse{}, err
+	}
+
+	if err := json.Unmarshal(bodyData, &danmakuResp); err != nil {
+		return constants.DanmakuResponse{}, err
+	}
+
+	return danmakuResp, nil
+}
