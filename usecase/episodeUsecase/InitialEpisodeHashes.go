@@ -184,9 +184,13 @@ func CalculateFileHash(filePath string) (string, error) {
 	defer file.Close()
 
 	hash := md5.New()
-	if _, err := io.CopyN(hash, file, 16*1024*1024); err != nil && err != io.EOF {
+	buffer := make([]byte, 16*1024*1024) // 16MB buffer
+
+	n, err := file.Read(buffer)
+	if err != nil && err != io.EOF {
 		return "", err
 	}
+	hash.Write(buffer[:n])
 
 	return hex.EncodeToString(hash.Sum(nil)), nil
 }

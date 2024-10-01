@@ -72,22 +72,23 @@ func main() {
 	if err := database.InitDatabase("media_library.db"); err != nil {
 		log.Fatalf("Failed to initialize database: %v", err)
 	}
-	// if err := episodeusecase.ScanAndSaveMedia(mediaLibraryPath); err != nil {
-	// 	log.Println("Error scanning and matching media: %v", err)
+
+	// if err := episodeusecase.ScanAndSaveMedia(config.DefaultMediaLibraryPath); err != nil {
+	// 	log.Printf("Error scanning and matching media: %v", err)
 	// }
 
-	// if err := episodeusecase.ScanAndMatchMedia(mediaLibraryPath); err != nil {
-	// 	log.Fatalf("Error scanning and matching media: %v", err)
+	// if err := episodeusecase.ScanAndMatchMedia(config.DefaultMediaLibraryPath); err != nil {
+	// 	log.Printf("Error scanning and matching media: %v", err)
 	// }
 
-	// err := bangumiusecase.IncrementalUpdateBangumiInfo()
+	// err := bangumiusecase.InitializeBangumiInfo()
 	// if err != nil {
-	// 	log.Fatalf("Error scanning and matching media: %v", err)
+	// 	log.Printf("Error scanning and matching media: %v", err)
 	// }
 
-	// err := episodeusecase.ScanAndMatchSubtitles()
+	// err = episodeusecase.ScanAndMatchSubtitles()
 	// if err != nil {
-	// 	log.Fatalf("Error scanning and matching media: %v", err)
+	// 	log.Printf("Error scanning and matching media: %v", err)
 	// }
 
 	//filesacnner.ScanAndSaveMedia(mediaLibraryPath)

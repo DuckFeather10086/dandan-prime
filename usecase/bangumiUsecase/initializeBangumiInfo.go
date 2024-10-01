@@ -48,7 +48,18 @@ func InitializeBangumiInfo() error {
 				} else {
 					break
 				}
+
 			}
+		}
+
+		if dandanPlayAnimeID == 4847 {
+			bangumiID = 772
+			//fix the id error for dandanplay api id 4847 (Evangelion: 1.0 You Are (Not) Alone)
+		}
+
+		if dandanPlayAnimeID == 202 {
+			bangumiID = 6049
+			// fix the id error for dousingplay api id 4849 (Neon Genesis Evangelion: The End of Evangelion)
 		}
 
 		fetchedBangumiInfo, err := bangumi.FetchBangumiSubjectDetails(bangumiID)
@@ -164,7 +175,7 @@ func IncrementalUpdateBangumiInfo() error {
 				Update("air_date", fetchedBangumiInfo.Date).
 				Update("platform", fetchedBangumiInfo.Platform)
 
-			//database.DB.Model(&database.EpisodeInfo{}).Where("dandanplay_bangumi_id = ?", dandanPlayeBangumiID).Update("bangumi_bangumi_id", fetchedBangumiInfo.ID)
+			database.DB.Model(&database.EpisodeInfo{}).Where("dandanplay_bangumi_id = ?", dandanPlayeBangumiID).Update("bangumi_bangumi_id", fetchedBangumiInfo.ID)
 
 			time.Sleep(time.Duration(0.2 * float64(time.Second)))
 		}

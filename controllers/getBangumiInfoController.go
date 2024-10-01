@@ -92,7 +92,6 @@ func GetBangumiContentsByBangumiID(c echo.Context) error {
 	}
 
 	bangumiInfo, err := bangumiusecase.GetBangumiInfo(bangumiSubjectID)
-
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to get bangumi info"})
 	}
@@ -156,8 +155,8 @@ func GetEpisodeInfoByID(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to get episode info"})
 	}
 
-	// Remove the leading path from episodeInfo.FilePath
-	episodeInfo.FilePath = filepath.Base(episodeInfo.FilePath)
+	// // Remove the leading path from episodeInfo.FilePath
+	episodeInfo.FilePath = strings.TrimPrefix(episodeInfo.FilePath, config.DefaultMediaLibraryPath)
 
 	subtitles := []string{}
 	if episodeInfo.Subtitles != "" {
