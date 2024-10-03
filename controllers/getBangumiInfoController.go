@@ -4,6 +4,7 @@
 package controllers
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -20,18 +21,19 @@ import (
 )
 
 type BangumiInfo struct {
-	ID                  int       `json:"id"`
-	BangumiSubjectID    int       `json:"bangumi_subject_id"`
-	DandanplayBangumiID int       `json:"dandanpaly_bangumi_id"`
-	ImageURL            string    `json:"image_url"`
-	Summary             string    `json:"summary"`
-	RateScore           float64   `json:"rate_score"`
-	TotalEpisodes       int       `json:"total_episodes"`
-	AirDate             string    `json:"air_date"`
-	Platform            string    `json:"platform"`
-	Title               string    `json:"title"`
-	Directory           string    `json:"directory"`
-	Episodes            []Episode `json:"episodes"`
+	ID                  int             `json:"id"`
+	BangumiSubjectID    int             `json:"bangumi_subject_id"`
+	DandanplayBangumiID int             `json:"dandanpaly_bangumi_id"`
+	ImageURL            string          `json:"image_url"`
+	Summary             string          `json:"summary"`
+	RateScore           float64         `json:"rate_score"`
+	TotalEpisodes       int             `json:"total_episodes"`
+	AirDate             string          `json:"air_date"`
+	Platform            string          `json:"platform"`
+	Title               string          `json:"title"`
+	Directory           string          `json:"directory"`
+	Episodes            json.RawMessage `json:"episodes"`
+	UnknownEpisodes     []Episode       `json:"unknown_episodes"`
 }
 
 // Episode 结构体用于存储作品目录下的内容信息
@@ -71,7 +73,8 @@ func GetBangumiContentsByBangumiID(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to get episode info"})
 	}
 
-	episodes := make([]Episode, 0, len(episodeInfos))
+	episodeMap := make(map[string][]Episode)
+	unknownEpisodes := []Episode{}
 
 	for _, episodeInfo := range episodeInfos {
 		subtitles := []string{}
@@ -79,7 +82,7 @@ func GetBangumiContentsByBangumiID(c echo.Context) error {
 			subtitles = strings.Split(episodeInfo.Subtitles, ";")
 		}
 
-		episodes = append(episodes, Episode{
+		episode := Episode{
 			ID:                  episodeInfo.ID,
 			DandanplayEpisodeID: episodeInfo.EpisodeDandanplayID,
 			Title:               episodeInfo.Title,
@@ -88,7 +91,38 @@ func GetBangumiContentsByBangumiID(c echo.Context) error {
 			FileName:            episodeInfo.FileName,
 			FilePath:            episodeInfo.FilePath,
 			Subtitles:           subtitles,
+		}
+
+		if episodeInfo.EpisodeDandanplayID != 0 {
+			key := strconv.Itoa(episodeInfo.EpisodeDandanplayID)
+			episodeMap[key] = append(episodeMap[key], episode)
+		} else {
+			unknownEpisodes = append(unknownEpisodes, episode)
+		}
+	}
+
+	// Sort episodes in each array, putting those with subtitles first
+	for key, episodes := range episodeMap {
+		sort.Slice(episodes, func(i, j int) bool {
+			return len(episodes[i].Subtitles) > len(episodes[j].Subtitles)
 		})
+		episodeMap[key] = episodes
+	}
+
+	// Sort unknown episodes, putting those with subtitles first
+	sort.Slice(unknownEpisodes, func(i, j int) bool {
+		return len(unknownEpisodes[i].Subtitles) > len(unknownEpisodes[j].Subtitles)
+	})
+
+	// Add unknown episodes to the map with a special key
+	if len(unknownEpisodes) > 0 {
+		episodeMap["unknown"] = unknownEpisodes
+	}
+
+	// Marshal the episode map to JSON
+	episodesJSON, err := json.Marshal(episodeMap)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to marshal episodes"})
 	}
 
 	bangumiInfo, err := bangumiusecase.GetBangumiInfo(bangumiSubjectID)
@@ -109,11 +143,11 @@ func GetBangumiContentsByBangumiID(c echo.Context) error {
 		Directory:     relativePath,
 		ImageURL:      fmt.Sprintf("https://api.bgm.tv/v0/subjects/%d/image?type=large", bangumiInfo.BangumiSubjectID),
 		Summary:       bangumiInfo.Summary,
-		Episodes:      episodes,
 		RateScore:     bangumiInfo.RateScore,
 		TotalEpisodes: bangumiInfo.TotalEpisodes,
 		AirDate:       bangumiInfo.AirDate,
 		Platform:      bangumiInfo.Platform,
+		Episodes:      episodesJSON,
 	}
 
 	return c.JSON(http.StatusOK, respBangumiInfo)
