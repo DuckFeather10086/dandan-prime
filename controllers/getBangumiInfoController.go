@@ -129,25 +129,28 @@ func GetBangumiContentsByBangumiID(c echo.Context) error {
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to get bangumi info"})
 	}
+	var respBangumiInfo BangumiInfo
 
-	fullPath := episodeInfos[0].FilePath
-	relativePath, err := filepath.Rel(config.DefaultMediaLibraryPath, fullPath)
-	if err != nil {
-		fmt.Println("Error:", err)
-		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to Handing Path"})
-	}
+	if len(episodeInfos) > 0 {
+		fullPath := episodeInfos[0].FilePath
+		relativePath, err := filepath.Rel(config.DefaultMediaLibraryPath, fullPath)
+		if err != nil {
+			fmt.Println("Error:", err)
+			return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to Handing Path"})
+		}
+		respBangumiInfo = BangumiInfo{
+			ID:            bangumiInfo.BangumiSubjectID,
+			Title:         bangumiInfo.Name,
+			Directory:     relativePath,
+			ImageURL:      fmt.Sprintf("https://api.bgm.tv/v0/subjects/%d/image?type=large", bangumiInfo.BangumiSubjectID),
+			Summary:       bangumiInfo.Summary,
+			RateScore:     bangumiInfo.RateScore,
+			TotalEpisodes: bangumiInfo.TotalEpisodes,
+			AirDate:       bangumiInfo.AirDate,
+			Platform:      bangumiInfo.Platform,
+			Episodes:      episodesJSON,
+		}
 
-	respBangumiInfo := BangumiInfo{
-		ID:            bangumiInfo.BangumiSubjectID,
-		Title:         bangumiInfo.Name,
-		Directory:     relativePath,
-		ImageURL:      fmt.Sprintf("https://api.bgm.tv/v0/subjects/%d/image?type=large", bangumiInfo.BangumiSubjectID),
-		Summary:       bangumiInfo.Summary,
-		RateScore:     bangumiInfo.RateScore,
-		TotalEpisodes: bangumiInfo.TotalEpisodes,
-		AirDate:       bangumiInfo.AirDate,
-		Platform:      bangumiInfo.Platform,
-		Episodes:      episodesJSON,
 	}
 
 	return c.JSON(http.StatusOK, respBangumiInfo)

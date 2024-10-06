@@ -13,14 +13,13 @@ var DB *gorm.DB
 func InitDatabase(dbPath string) error {
 	var err error
 	DB, err = gorm.Open(
-
 		sqlite.Open(dbPath), &gorm.Config{})
 	if err != nil {
 		return err
 	}
 
 	// Migrate the schema
-	return DB.AutoMigrate(&EpisodeInfo{}, &BangumiInfo{})
+	return DB.AutoMigrate(&EpisodeInfo{}, &BangumiInfo{}, &EpisodeThumbNail{})
 }
 
 func CreateEpisodeInfo(episode *EpisodeInfo) error {

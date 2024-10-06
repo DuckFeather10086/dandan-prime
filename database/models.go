@@ -42,3 +42,9 @@ type BangumiInfo struct {
 	AirDate             string `gorm:"size:20"`
 	Platform            string `gorm:"size:50"`
 }
+
+type EpisodeThumbNail struct {
+	gorm.Model
+	EpisodeID      uint   `gorm:"episode_id"`
+	ThumbNailImage string `gorm:"thumb_nail_image"`
+}

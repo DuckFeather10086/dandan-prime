@@ -4,7 +4,8 @@
 package config
 
 const (
-	DefaultMediaLibraryPath = "/WDBLUE_1"
+	DefaultMediaLibraryPath     = "/WDBLUE_1"
+	DefaultEpisodeThumbnailPath = "/WDBLUE_1/thumbnails"
 )
 
 var DefaultAllowedExtensions = []string{".mkv", ".mp4"}

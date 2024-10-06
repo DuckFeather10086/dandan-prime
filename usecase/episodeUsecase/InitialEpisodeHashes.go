@@ -16,6 +16,7 @@ import (
 
 	"github.com/duckfeather10086/dandan-prime/database"
 	"github.com/duckfeather10086/dandan-prime/internal/dandanplay"
+	"github.com/duckfeather10086/dandan-prime/internal/ffmpegutil"
 )
 
 var allowedExtensionsVideo = []string{".mkv", ".mp4"}
@@ -160,6 +161,40 @@ func ScanAndMatchSubtitles() error {
 				Subtitles: subtitlesStr,
 			}); err != nil {
 				return fmt.Errorf("error updating subtitles for %s: %v", episode.FileName, err)
+			}
+		}
+	}
+
+	return nil
+}
+
+func ScanAndPrepareThumbnails() error {
+	var episodes []database.EpisodeInfo
+	if err := database.DB.Find(&episodes).Error; err != nil {
+		return err
+	}
+
+	//outpoutfile := config.DefaultEpisodeThumbnailPath
+
+	for _, episode := range episodes {
+		var thumbNailCount int64
+		database.DB.Model(&database.EpisodeThumbNail{}).Where("episode_id =?", episode.ID).Count(&thumbNailCount)
+		if thumbNailCount > 0 {
+			continue
+		} else {
+			outputFilename, err := ffmpegutil.GenerateThumbnail(fmt.Sprintf("%s/%s", episode.FilePath, episode.FileName), fmt.Sprintf("thumbnails/%d.jpg", episode.ID), "00:00:05")
+			if err != nil {
+				log.Printf("error generating thumbnail for %s: %v", episode.FileName, err)
+				continue
+			}
+
+			if outputFilename != "" {
+				episodeThumbNailInfo := database.EpisodeThumbNail{
+					EpisodeID:      episode.ID,
+					ThumbNailImage: outputFilename,
+				}
+
+				database.DB.Model(&database.EpisodeThumbNail{}).Save(&episodeThumbNailInfo)
 			}
 		}
 	}

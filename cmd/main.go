@@ -16,6 +16,7 @@ import (
 	"github.com/duckfeather10086/dandan-prime/config"
 	"github.com/duckfeather10086/dandan-prime/controllers"
 	"github.com/duckfeather10086/dandan-prime/database"
+	episodeusecase "github.com/duckfeather10086/dandan-prime/usecase/episodeUsecase"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 )
@@ -90,6 +91,11 @@ func main() {
 	// if err != nil {
 	// 	log.Printf("Error scanning and matching media: %v", err)
 	// }
+
+	err := episodeusecase.ScanAndPrepareThumbnails()
+	if err != nil {
+		log.Printf("Error scanning and matching media: %v", err)
+	}
 
 	//filesacnner.ScanAndSaveMedia(mediaLibraryPath)
 
