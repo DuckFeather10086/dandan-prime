@@ -14,6 +14,8 @@ import (
 	"strconv"
 	"strings"
 
+	"math/rand"
+
 	"github.com/duckfeather10086/dandan-prime/database"
 	"github.com/duckfeather10086/dandan-prime/internal/dandanplay"
 	"github.com/duckfeather10086/dandan-prime/internal/ffmpegutil"
@@ -170,7 +172,7 @@ func ScanAndMatchSubtitles() error {
 
 func ScanAndPrepareThumbnails() error {
 	var episodes []database.EpisodeInfo
-	if err := database.DB.Find(&episodes).Error; err != nil {
+	if err := database.DB.Find(&episodes).Where("episode_dandanplay_id != 0").Where("dandanplay_bangumi_id != 0").Group("episode_dandanplay_id").Error; err != nil {
 		return err
 	}
 
@@ -182,7 +184,9 @@ func ScanAndPrepareThumbnails() error {
 		if thumbNailCount > 0 {
 			continue
 		} else {
-			outputFilename, err := ffmpegutil.GenerateThumbnail(fmt.Sprintf("%s/%s", episode.FilePath, episode.FileName), fmt.Sprintf("thumbnails/%d.jpg", episode.ID), "00:00:05")
+			// Generate random second between 0 and video duration
+			randSecond := rand.Intn(int(60))
+			outputFilename, err := ffmpegutil.GenerateThumbnail(fmt.Sprintf("%s/%s", episode.FilePath, episode.FileName), fmt.Sprintf("thumbnails/%d.jpg", episode.ID), fmt.Sprintf("00:00:%02d", randSecond))
 			if err != nil {
 				log.Printf("error generating thumbnail for %s: %v", episode.FileName, err)
 				continue
@@ -197,6 +201,15 @@ func ScanAndPrepareThumbnails() error {
 				database.DB.Model(&database.EpisodeThumbNail{}).Save(&episodeThumbNailInfo)
 			}
 		}
+	}
+
+	return nil
+}
+
+func GenerateHlsCache(episodeID int) error {
+	var episode database.EpisodeInfo
+	if err := database.DB.Find(&episode).Where("id != ?", episodeID).Error; err != nil {
+		return err
 	}
 
 	return nil

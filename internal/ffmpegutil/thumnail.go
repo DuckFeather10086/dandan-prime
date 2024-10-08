@@ -15,6 +15,7 @@ func GenerateThumbnail(inputFile, outputFile string, timeOffset string) (string,
 		"-i", inputFile,
 		"-ss", timeOffset,
 		"-s", "480x270",
+		"-preset", "ultrafast",
 		"-frames:v", "1",
 		outputFile)
 
@@ -29,6 +30,32 @@ func GenerateThumbnail(inputFile, outputFile string, timeOffset string) (string,
 	}
 
 	return outputFile, nil
+}
+
+func GenerateHlsCache(inputFile, timeOffset string, segmentDuration, segmentIndex int) error {
+	cmd := exec.Command("ffmpeg",
+		"-i", inputFile,
+		"-c:v", "libx264",
+		"-c:a", "aac",
+		"-f", "hls",
+		"-threads", "8",
+		"-preset", "ultrafast",
+		"-hls_time", fmt.Sprintf("%d", segmentDuration),
+		"-hls_playlist_type", "vod",
+		"-hls_segment_filename", fmt.Sprintf("output%05d.ts", segmentIndex),
+		"output.m3u8")
+
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	log.Println("cmd", cmd.String())
+
+	err := cmd.Run()
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // func ExtractFrameToMemory(inputFile, timeStamp, size, outputFileName string) ([]byte, error) {
