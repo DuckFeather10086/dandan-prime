@@ -16,7 +16,6 @@ import (
 	"github.com/duckfeather10086/dandan-prime/config"
 	"github.com/duckfeather10086/dandan-prime/controllers"
 	"github.com/duckfeather10086/dandan-prime/database"
-	episodeusecase "github.com/duckfeather10086/dandan-prime/usecase/episodeUsecase"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 )
@@ -92,10 +91,10 @@ func main() {
 	// 	log.Printf("Error scanning and matching media: %v", err)
 	// }
 
-	err := episodeusecase.ScanAndPrepareThumbnails()
-	if err != nil {
-		log.Printf("Error scanning and matching media: %v", err)
-	}
+	// err := episodeusecase.ScanAndPrepareThumbnails()
+	// if err != nil {
+	// 	log.Printf("Error scanning and matching media: %v", err)
+	// }
 
 	//filesacnner.ScanAndSaveMedia(mediaLibraryPath)
 
@@ -134,7 +133,7 @@ func main() {
 	e.Static("/subtitles", config.DefaultMediaLibraryPath)
 
 	// 配置视频流媒体服务
-	e.GET("/stream/:filename", streamHandler)
+	e.GET("/stream/:filename", serveHLSHandler)
 
 	e.GET("/api/bangumi/:bangumi_subject_id/contents", controllers.GetBangumiContentsByBangumiID)
 
@@ -214,4 +213,31 @@ func streamHandler(c echo.Context) error {
 	c.Response().Header().Set(echo.HeaderContentType, "video/mp4")
 	c.Response().Header().Set(echo.HeaderContentDisposition, "inline; filename="+filename)
 	return c.File(videoPath)
+}
+func serveHLSHandler(c echo.Context) error {
+	filename := c.Param("filename")
+	fileExt := filepath.Ext(filename)
+	filePath := filepath.Join("./cache", filename)
+
+	// Check if the file exists
+	if _, err := os.Stat(filePath); os.IsNotExist(err) {
+		return c.JSON(http.StatusNotFound, map[string]string{"error": "File not found"})
+	}
+
+	var contentType string
+	switch fileExt {
+	case ".m3u8":
+		contentType = "application/vnd.apple.mpegurl"
+	case ".ts":
+		contentType = "video/mp2t"
+	default:
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid file type"})
+	}
+
+	// Set appropriate headers
+	c.Response().Header().Set(echo.HeaderContentType, contentType)
+	c.Response().Header().Set("Access-Control-Allow-Origin", "*")
+	c.Response().Header().Set("Cache-Control", "no-cache")
+
+	return c.File(filePath)
 }
