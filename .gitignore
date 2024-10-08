@@ -1,2 +1,3 @@
 cmd/cache
 cmd/thumbnails
+cmd/media_library.db
