@@ -101,8 +101,6 @@ ffmpeg -ss 00:10:00 -i yurucamp_06.mkv -t 00:05:00 -c:v libx264 -c:a aac -thread
 
 func GenerateHlsSegment(inputFile string, startIndex, segmentDuration int, w io.Writer) error {
 	log.Println("startIndex", startIndex)
-	//formattedStartTime := FormatDuration(startIndex * segmentDuration)
-	//formattedDuration := FormatDuration(segmentDuration)
 	// Create cache directory if it doesn't exist
 	cacheDir := "cache"
 	if err := os.MkdirAll(cacheDir, 0755); err != nil {
@@ -193,25 +191,6 @@ func FormatDuration(seconds int) string {
 
 	return fmt.Sprintf("%02d:%02d:%02d", hours, minutes, remainingSeconds)
 }
-
-// func ExtractFrameToMemory(inputFile, timeStamp, size, outputFileName string) ([]byte, error) {
-// 	// Prepare the ffmpeg command
-// 	cmd := exec.Command("ffmpeg", "-i", inputFile, "-ss", timeStamp, "-s", size, "-frames:v", "1", outputFileName)
-// 	println(cmd.String())
-
-// 	// Execute the ffmpeg command
-// 	if err := cmd.Run(); err != nil {
-// 		return nil, fmt.Errorf("failed to execute ffmpeg command: %v", err)
-// 	}
-
-// 	// Read the generated image file into memory
-// 	imageData, err := ioutil.ReadFile(outputPath)
-// 	if err != nil {
-// 		return nil, fmt.Errorf("failed to read the generated image: %v", err)
-// 	}
-
-// 	return imageData, nil
-// }
 
 func GenerateMultipleThumbnails(inputFile, outputPattern string, interval string) error {
 	cmd := exec.Command("ffmpeg",

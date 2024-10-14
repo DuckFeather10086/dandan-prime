@@ -48,3 +48,13 @@ type EpisodeThumbNail struct {
 	EpisodeID      uint   `gorm:"episode_id"`
 	ThumbNailImage string `gorm:"thumb_nail_image"`
 }
+
+type UserInfo struct {
+	gorm.Model
+	Username             string `gorm:"size:255;uniqueIndex"`
+	Password             string `gorm:"size:255;not null"`
+	Email                string `gorm:"size:255;uniqueIndex"`
+	Avatar               string `gorm:"size:255"`
+	LastWatchedBangumiID uint
+	LastWatchedEpisodeID uint
+}

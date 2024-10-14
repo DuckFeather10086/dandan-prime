@@ -52,6 +52,10 @@ func main() {
 		log.Fatalf("Failed to initialize database: %v", err)
 	}
 
+	if err := config.InitConfig(); err != nil {
+		log.Fatalf("Failed to initialize config: %v", err)
+	}
+
 	// if err := episodeusecase.ScanAndSaveMedia(config.DefaultMediaLibraryPath); err != nil {
 	// 	log.Printf("Error scanning and matching media: %v", err)
 	// }
