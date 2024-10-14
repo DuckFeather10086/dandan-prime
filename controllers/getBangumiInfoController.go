@@ -133,7 +133,7 @@ func GetBangumiContentsByBangumiID(c echo.Context) error {
 
 	if len(episodeInfos) > 0 {
 		fullPath := episodeInfos[0].FilePath
-		relativePath, err := filepath.Rel(config.DefaultMediaLibraryPath, fullPath)
+		relativePath, err := filepath.Rel(config.MEDIA_LIBRARY_ROOT_PATH, fullPath)
 		if err != nil {
 			fmt.Println("Error:", err)
 			return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to Handing Path"})
@@ -193,7 +193,7 @@ func GetEpisodeInfoByID(c echo.Context) error {
 	}
 
 	// // Remove the leading path from episodeInfo.FilePath
-	episodeInfo.FilePath = strings.TrimPrefix(episodeInfo.FilePath, config.DefaultMediaLibraryPath)
+	episodeInfo.FilePath = strings.TrimPrefix(episodeInfo.FilePath, config.MEDIA_LIBRARY_ROOT_PATH)
 
 	subtitles := []string{}
 	if episodeInfo.Subtitles != "" {

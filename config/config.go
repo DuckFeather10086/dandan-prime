@@ -4,15 +4,13 @@
 package config
 
 const (
-	DefaultMediaLibraryPath     = "/WDBLUE_1"
-	DefaultEpisodeThumbnailPath = "/WDBLUE_1/thumbnails"
+	MEDIA_LIBRARY_ROOT_PATH = "/WDBLUE_1"
+	PORT                    = 1234
 )
 
-var DefaultAllowedExtensions = []string{".mkv", ".mp4"}
+var DEFAULT_ALLOWED_EXTENSIONS = []string{".mkv", ".mp4"}
+var HLS_ENABLE = false
 
-// func GetConfig() *Config {
-// 	return &Config{
-// 		MediaLibraryPath:  os.Getenv("MEDIA_LIBRARY_PATH"),
-// 		AllowedExtensions: []string{".mkv", ".mp4"},
-// 	}
-// }
+func SetHlsEnabled(enabled bool) {
+	HLS_ENABLE = enabled
+}

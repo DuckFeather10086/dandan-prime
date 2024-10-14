@@ -1,0 +1,15 @@
+{
+    "media_library_root_path": "/WDBLUE_1",
+    "allowed_video_extensions": [
+        ".mp4",
+        ".mkv",
+        ".avi",
+        ".mov",
+        ".wmv",
+        ".flv",
+        ".mpg",
+        ".mpeg"
+    ],
+    "use_hls": true,
+    "hls_cache_path": "cache"
+}
