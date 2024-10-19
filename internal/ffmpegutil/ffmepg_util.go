@@ -128,6 +128,7 @@ func GenerateHlsSegment(inputFile string, startIndex, segmentDuration int, w io.
 		"-async", "1",
 		"-c:v", "libx264",
 		"-c:a", "aac",
+		"-ac", "2",
 		"-threads", "4",
 		"-pix_fmt", "yuv420p",
 		"-force_key_frames", "expr:gte(t,n_forced*5.000)",
@@ -137,11 +138,11 @@ func GenerateHlsSegment(inputFile string, startIndex, segmentDuration int, w io.
 		"-initial_offset", fmt.Sprintf("%v.00", startIndex*segmentDuration),
 		"pipe:out%05d.ts")
 
+	log.Println("cmd", cmd.String())
+
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
-
-	log.Println("cmd", cmd.String())
 
 	if err := cmd.Run(); err != nil {
 		log.Printf("FFmpeg error output:\n%s", stderr.String())
@@ -164,6 +165,9 @@ func GenerateHlsCache(inputFile, timeOffset string, segmentDuration, segmentInde
 		"-c:v", "libx264",
 		"-c:a", "aac",
 		"-f", "hls",
+		"-c:a", "aac",
+		"-b:a", "384k",
+		"-ac", "2",
 		"-threads", "8",
 		"-preset", "ultrafast",
 		"-hls_time", fmt.Sprintf("%d", segmentDuration),

@@ -38,6 +38,14 @@ func ScanAndSaveMedia(rootPath string) error {
 		ext := strings.ToLower(filepath.Ext(path))
 		for _, allowedExt := range allowedExtensionsVideo {
 			if ext == allowedExt {
+				fileExists, err := database.CheckFileExists(filepath.Base(path))
+				if err != nil {
+					return fmt.Errorf("error checking file existence for %s: %v", path, err)
+				}
+				if fileExists {
+					return nil
+				}
+
 				hash, err := CalculateFileHash(path)
 				if err != nil {
 					return fmt.Errorf("error calculating hash for %s: %v", path, err)
@@ -72,14 +80,14 @@ func ScanAndSaveMedia(rootPath string) error {
 func ScanAndMatchMedia(rootPath string) error {
 	var totalUnmatchedEpisodes int64
 
-	err := database.DB.Model(&database.EpisodeInfo{}).Count(&totalUnmatchedEpisodes).Error
+	err := database.DB.Model(&database.EpisodeInfo{}).Where("info_matched =?", false).Count(&totalUnmatchedEpisodes).Error
 	if err != nil {
 		return err
 	}
 
 	for i := int64(0); i < totalUnmatchedEpisodes/32+1; i += 1 {
 		var episodes []database.EpisodeInfo
-		if err := database.DB.Limit(BATCH_SIZE).Offset(int(i) * BATCH_SIZE).Find(&episodes).Error; err != nil {
+		if err := database.DB.Where("info_matched =?", false).Limit(BATCH_SIZE).Offset(int(i) * BATCH_SIZE).Find(&episodes).Error; err != nil {
 			return err
 		}
 
@@ -110,7 +118,13 @@ func ScanAndMatchMedia(rootPath string) error {
 					TypeDescription:     result.Result.TypeDescription,
 					EpisodeDandanplayID: result.Result.EpisodeID,
 					EpisodeNo:           episodeNO,
+					InfoMatched:         true,
 				})
+			} else {
+				err := database.UpdateEpisodeInfoByHash(result.FileHash, &database.EpisodeInfo{
+					InfoMatched: true,
+				})
+				log.Println("result false, err", err)
 			}
 		}
 	}
@@ -121,7 +135,7 @@ func ScanAndMatchMedia(rootPath string) error {
 
 func ScanAndMatchSubtitles() error {
 	var episodes []database.EpisodeInfo
-	if err := database.DB.Find(&episodes).Error; err != nil {
+	if err := database.DB.Where("subtitle_matched =?", false).Find(&episodes).Error; err != nil {
 		return err
 	}
 
@@ -160,7 +174,8 @@ func ScanAndMatchSubtitles() error {
 		if len(subtitles) > 0 {
 			subtitlesStr := strings.Join(subtitles, ";")
 			if err := database.UpdateEpisodeInfoByHash(episode.Hash, &database.EpisodeInfo{
-				Subtitles: subtitlesStr,
+				Subtitles:       subtitlesStr,
+				SubtitleMatched: true,
 			}); err != nil {
 				return fmt.Errorf("error updating subtitles for %s: %v", episode.FileName, err)
 			}
@@ -201,15 +216,6 @@ func ScanAndPrepareThumbnails() error {
 				database.DB.Model(&database.EpisodeThumbNail{}).Save(&episodeThumbNailInfo)
 			}
 		}
-	}
-
-	return nil
-}
-
-func GenerateHlsCache(episodeID int) error {
-	var episode database.EpisodeInfo
-	if err := database.DB.Find(&episode).Where("id != ?", episodeID).Error; err != nil {
-		return err
 	}
 
 	return nil

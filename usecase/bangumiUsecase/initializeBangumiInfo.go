@@ -19,6 +19,8 @@ func InitializeBangumiInfo() error {
 	var dandanPlayeBangumiIDs []int
 
 	res := database.DB.Model(&database.EpisodeInfo{}).
+		Where("dandanplay_bangumi_id IS NOT NULL").
+		Where("bangumi_matched =?", false).
 		Group("dandanplay_bangumi_id").
 		Select("dandanplay_bangumi_id").
 		Scan(&dandanPlayeBangumiIDs)
@@ -87,7 +89,7 @@ func InitializeBangumiInfo() error {
 			Update("air_date", fetchedBangumiInfo.Date).
 			Update("platform", fetchedBangumiInfo.Platform)
 
-		database.DB.Model(&database.EpisodeInfo{}).Where("dandanplay_bangumi_id = ?", dandanPlayAnimeID).Update("bangumi_bangumi_id", fetchedBangumiInfo.ID)
+		database.DB.Model(&database.EpisodeInfo{}).Where("dandanplay_bangumi_id = ?", dandanPlayAnimeID).Update("bangumi_bangumi_id", fetchedBangumiInfo.ID).Update("bangumi_matched", true)
 
 		time.Sleep(time.Duration(0.2 * float64(time.Second)))
 	}

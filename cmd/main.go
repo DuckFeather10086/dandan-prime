@@ -9,6 +9,8 @@ import (
 	"github.com/duckfeather10086/dandan-prime/config"
 	"github.com/duckfeather10086/dandan-prime/controllers"
 	"github.com/duckfeather10086/dandan-prime/database"
+	bangumiusecase "github.com/duckfeather10086/dandan-prime/usecase/bangumiUsecase"
+	episodeusecase "github.com/duckfeather10086/dandan-prime/usecase/episodeUsecase"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 )
@@ -23,23 +25,23 @@ func main() {
 		log.Fatalf("Failed to initialize config: %v", err)
 	}
 
-	// if err := episodeusecase.ScanAndSaveMedia(config.DefaultMediaLibraryPath); err != nil {
-	// 	log.Printf("Error scanning and matching media: %v", err)
-	// }
+	if err := episodeusecase.ScanAndSaveMedia(config.MEDIA_LIBRARY_ROOT_PATH); err != nil {
+		log.Printf("Error scanning and matching media: %v", err)
+	}
 
-	// if err := episodeusecase.ScanAndMatchMedia(config.DefaultMediaLibraryPath); err != nil {
-	// 	log.Printf("Error scanning and matching media: %v", err)
-	// }
+	if err := episodeusecase.ScanAndMatchMedia(config.MEDIA_LIBRARY_ROOT_PATH); err != nil {
+		log.Printf("Error scanning and matching media: %v", err)
+	}
 
-	// err := bangumiusecase.InitializeBangumiInfo()
-	// if err != nil {
-	// 	log.Printf("Error scanning and matching media: %v", err)
-	// }
+	err := bangumiusecase.InitializeBangumiInfo()
+	if err != nil {
+		log.Printf("Error scanning and matching media: %v", err)
+	}
 
-	// err = episodeusecase.ScanAndMatchSubtitles()
-	// if err != nil {
-	// 	log.Printf("Error scanning and matching media: %v", err)
-	// }
+	err = episodeusecase.ScanAndMatchSubtitles()
+	if err != nil {
+		log.Printf("Error scanning and matching media: %v", err)
+	}
 
 	e := echo.New()
 

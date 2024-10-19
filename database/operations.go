@@ -34,6 +34,24 @@ func UpdateEpisodeInfoByHash(hash string, episode *EpisodeInfo) error {
 	return DB.Model(&EpisodeInfo{}).Where("hash = ?", hash).Updates(episode).Error
 }
 
+func DeleteEpisodeInfoByHash(hash string) error {
+	return DB.Where("hash =?", hash).Delete(&EpisodeInfo{}).Error
+}
+
+func CheckFileExists(fileName string) (bool, error) {
+	var count int64
+	err := DB.Model(&EpisodeInfo{}).Where("file_name =?", fileName).Count(&count).Error
+	if err == gorm.ErrRecordNotFound {
+		return false, nil
+	}
+
+	if count == 0 {
+		return false, nil
+	}
+
+	return true, err
+}
+
 func GetEpisodeInfoByHash(hash string) (*EpisodeInfo, error) {
 	var episode EpisodeInfo
 	err := DB.Where("hash = ?", hash).First(&episode).Error

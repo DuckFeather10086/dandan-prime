@@ -27,6 +27,9 @@ type EpisodeInfo struct {
 	Introduce           string `gorm:"type:text"`
 	Subtitles           string `gorm:"type:text"`
 	Length              int
+	InfoMatched         bool   `gorm:"default:false"`
+	BangumiMatched      bool   `gorm:"default:false"`
+	SubtitleMatched     bool   `gorm:"default:false"`
 	FilePath            string `gorm:"size:512;index"`
 }
 
