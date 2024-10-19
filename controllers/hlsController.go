@@ -105,11 +105,6 @@ func InitPlayListHandler(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to generate episode playlist. err: " + err.Error()})
 	}
 
-	// err = ffmpegutil.GenerateHlsSegments(episodeInfo.FilePath+"/"+episodeInfo.FileName, 0, 5, 10)
-	// if err != nil {
-	// 	return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to generate episode segments. err: " + err.Error()})
-	// }
-
 	return c.JSON(http.StatusOK, map[string]interface{}{
 		"playlist_path": "cache" + "playlist.m3u8",
 	})
@@ -161,19 +156,3 @@ func GenerateHlsSegments(c echo.Context, worker *ffmpegutil.Worker) error {
 		"status": "success",
 	})
 }
-
-// func initHlsPlayListWithEpisodeID(c echo.Context) error {
-// idStr := c.Param("id")
-// id, err := strconv.Atoi(idStr)
-// if err != nil {
-// 	return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid episode ID"})
-// }
-
-// 	episodeInfo, err := episodeusecase.GetEpisodeInfoById(id)
-// 	if err != nil {
-// 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to get episode info"})
-// 	}
-
-// 	ffmpegutil.GenerateHlsCache()
-
-// }

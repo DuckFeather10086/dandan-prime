@@ -55,6 +55,6 @@ type UserInfo struct {
 	Password             string `gorm:"size:255;not null"`
 	Email                string `gorm:"size:255;uniqueIndex"`
 	Avatar               string `gorm:"size:255"`
-	LastWatchedBangumiID uint
-	LastWatchedEpisodeID uint
+	LastWatchedBangumiID int
+	LastWatchedEpisodeID int
 }

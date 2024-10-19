@@ -19,7 +19,7 @@ func InitDatabase(dbPath string) error {
 	}
 
 	// Migrate the schema
-	return DB.AutoMigrate(&EpisodeInfo{}, &BangumiInfo{}, &EpisodeThumbNail{})
+	return DB.AutoMigrate(&EpisodeInfo{}, &BangumiInfo{}, &EpisodeThumbNail{}, &UserInfo{})
 }
 
 func CreateEpisodeInfo(episode *EpisodeInfo) error {
@@ -41,4 +41,21 @@ func GetEpisodeInfoByHash(hash string) (*EpisodeInfo, error) {
 		return nil, err
 	}
 	return &episode, nil
+}
+
+func InitUserInfo(userInfo *UserInfo) error {
+	return DB.Model(userInfo).Save(userInfo).Error
+}
+
+func GetUserInfoByUserId(id uint) (*UserInfo, error) {
+	var userInfo UserInfo
+	err := DB.Where("id =?", id).First(&userInfo).Error
+	if err != nil {
+		return nil, err
+	}
+	return &userInfo, nil
+}
+
+func UpdateUserInfoByUserId(userID uint, userInfo *UserInfo) error {
+	return DB.Model(&UserInfo{}).Where("id =?", userID).Updates(userInfo).Error
 }

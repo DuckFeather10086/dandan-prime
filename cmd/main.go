@@ -4,10 +4,7 @@
 package main
 
 import (
-	"encoding/json"
-	"io"
 	"log"
-	"net/http"
 
 	"github.com/duckfeather10086/dandan-prime/config"
 	"github.com/duckfeather10086/dandan-prime/controllers"
@@ -15,36 +12,6 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 )
-
-type AnimeData struct {
-	AnimeTitle string `json:"animeTitle"`
-	ImageURL   string `json:"imageUrl"`
-}
-
-type APIResponse struct {
-	BangumiList []AnimeData `json:"bangumiList"`
-}
-
-func fetchAnimeData() ([]AnimeData, error) {
-	resp, err := http.Get("https://api.dandanplay.net/api/v2/bangumi/shin")
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	var apiResp APIResponse
-	err = json.Unmarshal(body, &apiResp)
-	if err != nil {
-		return nil, err
-	}
-
-	return apiResp.BangumiList, nil
-}
 
 func main() {
 	//Initialize database
@@ -106,7 +73,10 @@ func main() {
 
 	e.POST("/api/hls", controllers.SetHlsEnable)
 
-	e.GET("/api/hls/enabled/", controllers.GetHlsEnable)
+	e.GET("/api/hls/enabled", controllers.GetHlsEnable)
+
+	e.GET("/api/last_watched", controllers.GetLastWatchedInfo)
+	e.POST("/api/last_watched", controllers.UpdateLastedWatched)
 
 	// 启动服务器
 	if err := e.Start(":1234"); err != nil {

@@ -1,3 +1,6 @@
+//go:build !js && !wasm
+// +build !js,!wasm
+
 package controllers
 
 import (
@@ -9,7 +12,6 @@ import (
 )
 
 func InitMediaLibrary(c echo.Context) error {
-
 	return c.JSON(http.StatusOK, nil)
 }
 
