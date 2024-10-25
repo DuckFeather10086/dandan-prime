@@ -1,6 +1,14 @@
 # dandan-prime
 
+
 [English](#english) | [中文](#中文)
+WebUI in ：[dandan-prime-web](https://github.com/DuckFeather10086/dandan-prime-web)  <!-- 添加 dandan-prime-web 链接 -->
+
+
+![Screenshot](/MainScreen.png)  <!-- 添加截图 -->
+
+![Screenshot](/Player.png)  <!-- 添加截图 -->
+
 
 ## English
 
@@ -15,7 +23,7 @@ dandan-prime is a local streaming media server that supports danmaku (bullet com
 ### Dependencies
 
 - Go
-- ffmepg (installed in system path)
+- ffmpeg (installed in system path)
 
 ### Installation
 
@@ -58,6 +66,7 @@ dandan-prime is a local streaming media server that supports danmaku (bullet com
 
 - [Bangumi API](https://github.com/bangumi/api/)
 - [dandanplay-libraryindex](https://github.com/kaedei/dandanplay-libraryindex)
+- [ffmpeg](https://ffmpeg.org/)  <!-- 添加 ffmpeg 链接 -->
 
 ## 中文
 
@@ -72,7 +81,7 @@ dandan-prime 是一个支持弹幕和 HLS 推流的本地流媒体服务器。�
 ### 依赖项
 
 - Go
-- ffmepg (安装在系统目录下)
+- ffmpeg (安装在系统目录下)
 
 ### 安装步骤
 
@@ -115,3 +124,4 @@ dandan-prime 是一个支持弹幕和 HLS 推流的本地流媒体服务器。�
 
 - [Bangumi API](https://github.com/bangumi/api/)
 - [dandanplay-libraryindex](https://github.com/kaedei/dandanplay-libraryindex)
+- [ffmpeg](https://ffmpeg.org/)  <!-- 添加 ffmpeg 链接 -->
