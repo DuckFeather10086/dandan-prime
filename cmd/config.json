@@ -1,5 +1,5 @@
 {
-    "media_library_root_path": "/WDBLUE_1",
+    "media_library_root_path": "YOUR_MEDIA_LIBRARY_ROOT_PATH",
     "allowed_video_extensions": [
         ".mp4",
         ".mkv",
