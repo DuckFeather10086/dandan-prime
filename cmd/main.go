@@ -52,7 +52,7 @@ func main() {
 	e.POST("/api/bangumi/media_library", controllers.UpdateMediaLibrary)
 
 	e.PUT("/api/last_watched", controllers.UpdateLastedWatched)
-	e.PUT("/api/hls", controllers.SetHlsEnable)
+	e.PUT("/api/hls_enable", controllers.SetHlsEnable)
 
 	e.DELETE("/api/bangumi/:bangumi_subject_id", controllers.DeleteBangumi)
 
