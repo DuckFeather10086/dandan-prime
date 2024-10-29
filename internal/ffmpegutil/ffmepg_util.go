@@ -12,6 +12,8 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strconv"
+
+	"github.com/duckfeather10086/dandan-prime/config"
 )
 
 func GenerateThumbnail(inputFile, outputFile string, timeOffset string) (string, error) {
@@ -64,6 +66,24 @@ func GenerateHlsPlayList(inputFile string, episodeID, segmentDuration int) error
 
 	log.Println("duration", duration)
 
+	// 获取视频的宽度和高度
+	width, height, err := getVideoDimensions(inputFile)
+	if err != nil {
+		return err
+	}
+
+	// 计算宽高比
+	var aspectRatio string
+	if width*3 == height*4 {
+		aspectRatio = "4:3"
+	} else if width*9 == height*16 {
+		aspectRatio = "16:9"
+	} else {
+		aspectRatio = fmt.Sprintf("%d:%d", width, height) // 其他比例
+	}
+
+	log.Println("aspect ratio", aspectRatio)
+
 	// Calculate the number of segments
 	numSegments := int(duration) / segmentDuration
 	if int(duration)%segmentDuration != 0 {
@@ -72,20 +92,34 @@ func GenerateHlsPlayList(inputFile string, episodeID, segmentDuration int) error
 
 	log.Println("numSegments", numSegments)
 
-	playList := "#EXTM3U\n#EXT-X-VERSION:6\n#EXT-X-TARGETDURATION:10\n#EXT-X-MEDIA-SEQUENCE:0\n#EXT-X-PLAYLIST-TYPE:VOD\n#EXT-X-INDEPENDENT-SEGMENTS\n"
+	resolutions := []int{480, 720, 1080}
 
-	for i := 0; i < numSegments; i++ {
-		playList += fmt.Sprintf("#EXTINF:%v.00, \n%s/segment?id=%d&index=%d\n", segmentDuration, "http://10.0.0.232:1234", episodeID, i)
+	metaPlaylist := "#EXTM3U\n"
+
+	for _, res := range resolutions {
+		metaPlaylist += fmt.Sprintf("#EXT-X-STREAM-INF:PROGRAM-ID=1,BANDWIDTH=2149280,RESOLUTION=1280x720,NAME=\"%d\"\n", res)
+
+		playList := "#EXTM3U\n#EXT-X-VERSION:6\n#EXT-X-TARGETDURATION:10\n#EXT-X-MEDIA-SEQUENCE:0\n#EXT-X-PLAYLIST-TYPE:VOD\n#EXT-X-INDEPENDENT-SEGMENTS\n"
+
+		for i := 0; i < numSegments; i++ {
+			playList += fmt.Sprintf("#EXTINF:%v.00, \n%s/segment?id=%d&index=%d&resolution=%d&ratio=%s\n", segmentDuration, fmt.Sprintf("%s://%s", config.HLS_HOST_PROTOCOL, config.HLS_HOST_NAME), episodeID, i, res, aspectRatio)
+		}
+		playList += "#EXT-X-ENDLIST\n"
+
+		// Save the playlist to cache/playlist.m3u8
+		playlistPath := filepath.Join(cacheDir, fmt.Sprintf("playlist_%d.m3u8", res))
+		if err := os.WriteFile(playlistPath, []byte(playList), 0644); err != nil {
+			return fmt.Errorf("failed to write playlist file: %v", err)
+		}
+		metaPlaylist += fmt.Sprintf("%s://%s", config.HLS_HOST_PROTOCOL, config.HLS_HOST_NAME) + fmt.Sprintf("playlist_%d.m3u8", res) + "\n"
+
+		log.Printf("Playlist saved to: %s", playlistPath)
 	}
-	playList += "#EXT-X-ENDLIST\n"
 
-	// Save the playlist to cache/playlist.m3u8
-	playlistPath := filepath.Join(cacheDir, "playlist.m3u8")
-	if err := os.WriteFile(playlistPath, []byte(playList), 0644); err != nil {
+	metaPlaylistPath := filepath.Join(cacheDir, fmt.Sprintf("playlist.m3u8"))
+	if err := os.WriteFile(metaPlaylistPath, []byte(metaPlaylist), 0644); err != nil {
 		return fmt.Errorf("failed to write playlist file: %v", err)
 	}
-
-	log.Printf("Playlist saved to: %s", playlistPath)
 
 	// 保存当前的 episodeID
 	if err := saveCurrentEpisodeID(cacheDir, episodeID); err != nil {
@@ -99,10 +133,10 @@ func GenerateHlsPlayList(inputFile string, episodeID, segmentDuration int) error
 ffmpeg -ss 00:10:00 -i yurucamp_06.mkv -t 00:05:00 -c:v libx264 -c:a aac -threads 4 -preset ultrafast -f hls -hls_time 10 -hls_playlist_type vod -hls_segment_filename "output%03d.ts"
 */
 
-func GenerateHlsSegment(inputFile string, startIndex, segmentDuration int, w io.Writer) error {
+func GenerateHlsSegment(inputFile string, startIndex, resolution, segmentDuration int, ratio string, w io.Writer) error {
 	log.Println("startIndex", startIndex)
 	// Create cache directory if it doesn't exist
-	cacheDir := "cache"
+	cacheDir := config.HLS_CACHE_PATH
 	if err := os.MkdirAll(cacheDir, 0755); err != nil {
 		return fmt.Errorf("failed to create cache directory: %v", err)
 	}
@@ -120,6 +154,18 @@ func GenerateHlsSegment(inputFile string, startIndex, segmentDuration int, w io.
 		return err
 	}
 
+	dimensionRatio := "16:9"
+	if ratio == "4:3" {
+		dimensionRatio = "4:3"
+	}
+
+	var outputWidth int
+	if dimensionRatio == "16:9" {
+		outputWidth = resolution * 16 / 9
+	} else if dimensionRatio == "4:3" {
+		outputWidth = resolution * 4 / 3
+	}
+
 	// Segment doesn't exist, generate it
 	cmd := exec.Command("ffmpeg",
 		"-ss", fmt.Sprintf("%v.00", startIndex*segmentDuration),
@@ -133,6 +179,7 @@ func GenerateHlsSegment(inputFile string, startIndex, segmentDuration int, w io.
 		"-pix_fmt", "yuv420p",
 		"-force_key_frames", "expr:gte(t,n_forced*5.000)",
 		"-preset", "ultrafast",
+		"-vf", fmt.Sprintf("scale=%d:%d", outputWidth, resolution),
 		"-f", "ssegment",
 		"-segment_time", fmt.Sprintf("%v.00", segmentDuration),
 		"-initial_offset", fmt.Sprintf("%v.00", startIndex*segmentDuration),
@@ -194,6 +241,28 @@ func FormatDuration(seconds int) string {
 	remainingSeconds := seconds % 60
 
 	return fmt.Sprintf("%02d:%02d:%02d", hours, minutes, remainingSeconds)
+}
+
+func getVideoDimensions(inputFile string) (int, int, error) {
+	cmd := exec.Command("ffprobe",
+		"-v", "error",
+		"-select_streams", "v:0",
+		"-show_entries", "stream=width,height",
+		"-of", "csv=p=0",
+		inputFile)
+
+	output, err := cmd.Output()
+	if err != nil {
+		return 0, 0, fmt.Errorf("failed to get video dimensions: %v", err)
+	}
+
+	var width, height int
+	_, err = fmt.Sscanf(string(output), "%d,%d", &width, &height)
+	if err != nil {
+		return 0, 0, fmt.Errorf("failed to parse video dimensions: %v", err)
+	}
+
+	return width, height, nil
 }
 
 func GenerateMultipleThumbnails(inputFile, outputPattern string, interval string) error {

@@ -65,6 +65,19 @@ func ServeHLSSegmentHandler(c echo.Context) error {
 		return c.String(http.StatusBadRequest, "Invalid start index")
 	}
 
+	resolution := 1080
+	if c.QueryParam("resolution") != "" {
+		resolution, err = strconv.Atoi(c.QueryParam("resolution"))
+		if err != nil {
+			return c.String(http.StatusBadRequest, "Invalid resolution")
+		}
+	}
+
+	ratio := "16:9"
+	if c.QueryParam("ratio") != "" {
+		ratio = c.QueryParam("ratio")
+	}
+
 	c.Response().Header().Set("Content-Type", "video/MP2T")
 	c.Response().Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=segment_%d.ts", startIndex))
 
@@ -78,7 +91,8 @@ func ServeHLSSegmentHandler(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to get episode info"})
 	}
 
-	err = ffmpegutil.GenerateHlsSegment(episodeInfo.FilePath+"/"+episodeInfo.FileName, startIndex, 5, c.Response().Writer)
+	segmentationDuration := 5
+	err = ffmpegutil.GenerateHlsSegment(episodeInfo.FilePath+"/"+episodeInfo.FileName, startIndex, resolution, segmentationDuration, ratio, c.Response().Writer)
 	if err != nil {
 		return c.String(http.StatusInternalServerError, fmt.Sprintf("Error generating HLS segment: %v", err))
 	}

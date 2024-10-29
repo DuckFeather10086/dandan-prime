@@ -14,6 +14,9 @@ var DEFAULT_ALLOWED_EXTENSIONS []string
 var HLS_ENABLE bool
 var MEDIA_LIBRARY_ROOT_PATH string
 var PORT int
+var HLS_HOST_PROTOCOL string
+var HLS_HOST_NAME string
+var HLS_CACHE_PATH string
 
 type Config struct {
 	MediaLibraryRootPath   string   `json:"media_library_root_path"`
@@ -21,6 +24,8 @@ type Config struct {
 	UseHLS                 bool     `json:"use_hls"`
 	HLSCachePath           string   `json:"hls_cache_path"`
 	Port                   int      `json:"port"`
+	HLSHostName            string   `json:"hls_host_name"`
+	HLSHostProtocol        string   `json:"hls_host_protocol"`
 }
 
 func InitConfig() error {
@@ -40,6 +45,10 @@ func InitConfig() error {
 	MEDIA_LIBRARY_ROOT_PATH = config.MediaLibraryRootPath
 	PORT = config.Port
 	HLS_ENABLE = config.UseHLS
+
+	HLS_HOST_NAME = config.HLSHostName
+	HLS_HOST_PROTOCOL = config.HLSHostProtocol
+	HLS_CACHE_PATH = config.HLSCachePath
 
 	return nil
 }

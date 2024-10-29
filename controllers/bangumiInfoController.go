@@ -270,6 +270,21 @@ func GetDanmakuByDandanplayEpisodeID(c echo.Context) error {
 	return c.JSON(http.StatusOK, response)
 }
 
+func DeleteBangumi(c echo.Context) error {
+	idStr := c.Param("bangumi_subject_id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid bangumi ID"})
+	}
+
+	err = bangumiusecase.DeleteBangumi(id)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to delete bangumi"})
+	}
+
+	return c.NoContent(http.StatusNoContent)
+}
+
 func getDanmakuType(mode int) string {
 	switch mode {
 	case 4:

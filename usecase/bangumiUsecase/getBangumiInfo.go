@@ -24,11 +24,22 @@ func GetBangumiInfo(bangumiSubjectID int) (database.BangumiInfo, error) {
 
 func GetAllBangumiInfo() ([]database.BangumiInfo, error) {
 	var bangumiList []database.BangumiInfo
-	err := database.DB.Where("bangumi_subject_id != 0").Group("bangumi_subject_id").Find(&bangumiList).Error
+	err := database.DB.Model(database.BangumiInfo{}).Where("bangumi_subject_id != 0").Where("deleted_at IS NULL").Group("bangumi_subject_id").Find(&bangumiList).Error
 
 	if err != nil {
 		return nil, err
 	}
 
 	return bangumiList, nil
+}
+
+func DeleteBangumi(bangumiID int) error {
+	bangumi := database.BangumiInfo{}
+	err := database.DB.Model(&bangumi).Where("bangumi_subject_id = ?", bangumiID).Delete(&bangumi).Error
+
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

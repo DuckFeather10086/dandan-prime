@@ -1,5 +1,5 @@
 {
-    "media_library_root_path": "YOUR_MEDIA_LIBRARY_ROOT_PATH",
+    "media_library_root_path": "/WDBLUE_1/Bangumis",
     "allowed_video_extensions": [
         ".mp4",
         ".mkv",
@@ -11,5 +11,7 @@
         ".mpeg"
     ],
     "use_hls": true,
-    "hls_cache_path": "cache"
+    "hls_cache_path": "cache",
+    "hls_host_name": "10.0.0.232:1234",
+    "hls_host_protocol": "http"
 }
