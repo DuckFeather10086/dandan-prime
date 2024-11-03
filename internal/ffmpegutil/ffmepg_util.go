@@ -142,7 +142,7 @@ func GenerateHlsSegment(inputFile string, startIndex, resolution, segmentDuratio
 	}
 
 	// Check if the segment already exists in cache
-	cacheFile := filepath.Join(cacheDir, fmt.Sprintf("segment_%05d.ts", startIndex))
+	cacheFile := filepath.Join(cacheDir, fmt.Sprintf("segment_%05d_%d.ts", startIndex, resolution))
 	if _, err := os.Stat(cacheFile); err == nil {
 		log.Println("cache file found", startIndex)
 		// Segment exists in cache, read and return it
@@ -164,6 +164,10 @@ func GenerateHlsSegment(inputFile string, startIndex, resolution, segmentDuratio
 		outputWidth = resolution * 16 / 9
 	} else if dimensionRatio == "4:3" {
 		outputWidth = resolution * 4 / 3
+	}
+
+	if outputWidth%2 != 0 {
+		outputWidth += 1
 	}
 
 	// Segment doesn't exist, generate it
@@ -204,35 +208,6 @@ func GenerateHlsSegment(inputFile string, startIndex, resolution, segmentDuratio
 	// Write the segment to the provided writer
 	_, err := w.Write(stdout.Bytes())
 	return err
-}
-
-func GenerateHlsCache(inputFile, timeOffset string, segmentDuration, segmentIndex int) error {
-	cmd := exec.Command("ffmpeg",
-		"-i", inputFile,
-		"-c:v", "libx264",
-		"-c:a", "aac",
-		"-f", "hls",
-		"-c:a", "aac",
-		"-b:a", "384k",
-		"-ac", "2",
-		"-threads", "8",
-		"-preset", "ultrafast",
-		"-hls_time", fmt.Sprintf("%d", segmentDuration),
-		"-hls_playlist_type", "vod",
-		"-hls_segment_filename", fmt.Sprintf("output%05d.ts", segmentIndex),
-		"output.m3u8")
-
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-
-	log.Println("cmd", cmd.String())
-
-	err := cmd.Run()
-	if err != nil {
-		return err
-	}
-
-	return nil
 }
 
 func FormatDuration(seconds int) string {
