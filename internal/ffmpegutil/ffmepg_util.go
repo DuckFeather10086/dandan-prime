@@ -173,21 +173,23 @@ func GenerateHlsSegment(inputFile string, startIndex, resolution, segmentDuratio
 	// Segment doesn't exist, generate it
 	cmd := exec.Command("ffmpeg",
 		"-ss", fmt.Sprintf("%v.00", startIndex*segmentDuration),
+		"-hwaccel", "vaapi",
+		"-hwaccel_device", "/dev/dri/renderD128",
 		"-i", inputFile,
 		"-t", fmt.Sprintf("%v.00", segmentDuration),
 		"-async", "1",
-		"-c:v", "libx264",
+		"-c:v", "h264_vaapi",
 		"-c:a", "aac",
 		"-ac", "2",
 		"-threads", "4",
-		"-pix_fmt", "yuv420p",
 		"-force_key_frames", "expr:gte(t,n_forced*5.000)",
-		"-preset", "ultrafast",
-		"-vf", fmt.Sprintf("scale=%d:%d", outputWidth, resolution),
+		// 修改格式转换和缩放的滤镜链
+		"-vf", fmt.Sprintf("format=nv12|vaapi,hwupload,scale_vaapi=w=%d:h=%d:format=nv12", outputWidth, resolution),
 		"-f", "ssegment",
 		"-segment_time", fmt.Sprintf("%v.00", segmentDuration),
 		"-initial_offset", fmt.Sprintf("%v.00", startIndex*segmentDuration),
-		"pipe:out%05d.ts")
+		"pipe:out%05d.ts",
+	)
 
 	log.Println("cmd", cmd.String())
 
