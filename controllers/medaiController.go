@@ -9,8 +9,8 @@ import (
 	"strconv"
 
 	"github.com/duckfeather10086/dandan-prime/config"
-	bangumiusecase "github.com/duckfeather10086/dandan-prime/usecase/bangumiUsecase"
-	episodeusecase "github.com/duckfeather10086/dandan-prime/usecase/episodeUsecase"
+	bangumiusecase "github.com/duckfeather10086/dandan-prime/usecase/bangumiUseCase"
+	episodeusecase "github.com/duckfeather10086/dandan-prime/usecase/episodeUseCase"
 	"github.com/labstack/echo/v4"
 )
 

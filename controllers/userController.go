@@ -12,9 +12,9 @@ import (
 	"strconv"
 
 	"github.com/duckfeather10086/dandan-prime/database"
-	bangumiusecase "github.com/duckfeather10086/dandan-prime/usecase/bangumiUsecase"
-	episodeUsecase "github.com/duckfeather10086/dandan-prime/usecase/episodeUsecase"
-	userusecase "github.com/duckfeather10086/dandan-prime/usecase/userUsecase"
+	bangumiUseCase "github.com/duckfeather10086/dandan-prime/usecase/bangumiUseCase"
+	episodeUseCase "github.com/duckfeather10086/dandan-prime/usecase/episodeUseCase"
+	userUseCase "github.com/duckfeather10086/dandan-prime/usecase/userUseCase"
 	"github.com/labstack/echo/v4"
 )
 
@@ -26,17 +26,17 @@ func GetLastWatchedInfo(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid user ID"})
 	}
 
-	userInfo, err := userusecase.GetUserInfoByUserId(uint(userIDUint))
+	userInfo, err := userUseCase.GetUserInfoByUserId(uint(userIDUint))
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to get user info"})
 	}
 
-	bangumiInfo, err := bangumiusecase.GetBangumiInfo(userInfo.LastWatchedBangumiID)
+	bangumiInfo, err := bangumiUseCase.GetBangumiInfo(userInfo.LastWatchedBangumiID)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to get bangumi info"})
 	}
 
-	episodeInfo, err := episodeUsecase.GetEpisodeInfoById(userInfo.LastWatchedEpisodeID)
+	episodeInfo, err := episodeUseCase.GetEpisodeInfoById(userInfo.LastWatchedEpisodeID)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to get episode info"})
 	}
@@ -94,7 +94,7 @@ func UpdateLastedWatched(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid episode ID"})
 	}
 
-	episodeInfo, err := episodeUsecase.GetEpisodeInfoById(episodeIDInt)
+	episodeInfo, err := episodeUseCase.GetEpisodeInfoById(episodeIDInt)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to get episode info"})
 	}
@@ -105,9 +105,15 @@ func UpdateLastedWatched(c echo.Context) error {
 		LastWatchedEpisodeID: episodeIDInt,
 	}
 
-	err = userusecase.UpdateUserInfo(uint(userIDUint), &userInfo)
+	err = userUseCase.UpdateUserInfo(uint(userIDUint), &userInfo)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to update last watched info err:" + err.Error()})
 	}
+
+	err = bangumiUseCase.UpdateBangumiLastWatchedEpisode(episodeInfo.BangumiID, episodeInfo.ID)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to update bangumi last watched info err:" + err.Error()})
+	}
+
 	return c.NoContent(http.StatusOK)
 }

@@ -45,11 +45,13 @@ func main() {
 	e.GET("/api/bangumi/list", controllers.GetBangumiInfoList)
 	e.GET("/api/bangumi/episode/:id", controllers.GetEpisodeInfoByID)
 	e.GET("/api/bangumi/danmaku/:episode_id", controllers.GetDanmakuByDandanplayEpisodeID)
+	e.GET("/api/bangumi/dplayer/danmaku/v3/", controllers.GetDanmakuForDplayerByDandanplayEpisodeID)
 	e.GET("/api/last_watched", controllers.GetLastWatchedInfo)
+
 	e.GET("/api/hls/enabled", controllers.GetHlsEnable)
 
 	e.POST("/api/playlist/:id", controllers.InitPlayListHandler)
-	e.POST("/api/bangumi/media_library", controllers.UpdateMediaLibrary)
+	e.POST("/api/bangumi/media-library", controllers.UpdateMediaLibrary)
 
 	e.PUT("/api/last_watched", controllers.UpdateLastedWatched)
 	e.PUT("/api/hls_enable", controllers.SetHlsEnable)

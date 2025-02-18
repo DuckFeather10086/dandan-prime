@@ -14,7 +14,7 @@ import (
 	"strconv"
 
 	"github.com/duckfeather10086/dandan-prime/internal/ffmpegutil"
-	episodeusecase "github.com/duckfeather10086/dandan-prime/usecase/episodeUsecase"
+	episodeusecase "github.com/duckfeather10086/dandan-prime/usecase/episodeUseCase"
 	"github.com/labstack/echo/v4"
 )
 

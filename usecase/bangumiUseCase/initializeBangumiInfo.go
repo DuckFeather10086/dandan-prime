@@ -150,7 +150,7 @@ func IncrementalUpdateBangumiInfo() error {
 
 			if dandanPlayeBangumiID == 202 {
 				bangumiID = 6049
-				// fix the id error for dousingplay api id 4849 (Neon Genesis Evangelion: The End of Evangelion)
+				// fix the id error for dandanplay api id 4849 (Neon Genesis Evangelion: The End of Evangelion)
 			}
 
 			fetchedBangumiInfo, err := bangumi.FetchBangumiSubjectDetails(bangumiID)
@@ -181,6 +181,24 @@ func IncrementalUpdateBangumiInfo() error {
 
 			time.Sleep(time.Duration(0.2 * float64(time.Second)))
 		}
+	}
+	return nil
+}
+
+func UpdateBangumiInfo(bangumiID uint, bangumiInfo *database.BangumiInfo) error {
+	err := database.DB.Model(&database.BangumiInfo{}).Where("id =?", bangumiID).Updates(bangumiInfo).Error
+	if err != nil {
+		log.Println("Failed to update bangumi info, err:", err)
+		return err
+	}
+	return nil
+}
+
+func UpdateBangumiLastWatchedEpisode(bangumiID uint, episodeID uint) error {
+	err := database.DB.Model(&database.BangumiInfo{}).Where("id =?", bangumiID).Update("last_watched_episode_id", episodeID).Error
+	if err != nil {
+		log.Println("Failed to update bangumi last watched episode, err:", err)
+		return err
 	}
 	return nil
 }

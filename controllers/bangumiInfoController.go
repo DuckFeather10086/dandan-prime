@@ -15,30 +15,32 @@ import (
 
 	"github.com/duckfeather10086/dandan-prime/config"
 	"github.com/duckfeather10086/dandan-prime/internal/dandanplay"
-	bangumiusecase "github.com/duckfeather10086/dandan-prime/usecase/bangumiUsecase"
-	episodeusecase "github.com/duckfeather10086/dandan-prime/usecase/episodeUsecase"
+	bangumiusecase "github.com/duckfeather10086/dandan-prime/usecase/bangumiUseCase"
+	episodeusecase "github.com/duckfeather10086/dandan-prime/usecase/episodeUseCase"
 	"github.com/labstack/echo/v4"
 )
 
 type BangumiInfo struct {
-	ID                  int             `json:"id"`
-	BangumiSubjectID    int             `json:"bangumi_subject_id"`
-	DandanplayBangumiID int             `json:"dandanpaly_bangumi_id"`
-	ImageURL            string          `json:"image_url"`
-	Summary             string          `json:"summary"`
-	RateScore           float64         `json:"rate_score"`
-	TotalEpisodes       int             `json:"total_episodes"`
-	AirDate             string          `json:"air_date"`
-	Platform            string          `json:"platform"`
-	Title               string          `json:"title"`
-	Directory           string          `json:"directory"`
-	Episodes            json.RawMessage `json:"episodes"`
-	UnknownEpisodes     []Episode       `json:"unknown_episodes"`
+	ID                   int             `json:"id"`
+	BangumiSubjectID     int             `json:"bangumi_subject_id"`
+	DandanplayBangumiID  int             `json:"dandanpaly_bangumi_id"`
+	ImageURL             string          `json:"image_url"`
+	Summary              string          `json:"summary"`
+	RateScore            float64         `json:"rate_score"`
+	TotalEpisodes        int             `json:"total_episodes"`
+	AirDate              string          `json:"air_date"`
+	Platform             string          `json:"platform"`
+	Title                string          `json:"title"`
+	Directory            string          `json:"directory"`
+	Episodes             json.RawMessage `json:"episodes"`
+	LastWatchedEpisodeID uint            `json:"last_watched_episode_id"`
+	UnknownEpisodes      []Episode       `json:"unknown_episodes"`
 }
 
 // Episode 结构体用于存储作品目录下的内容信息
 type Episode struct {
 	ID                  uint     `json:"id"`
+	EpisodeNo           int      `json:"episode_no,omitempty"`
 	DandanplayEpisodeID int      `json:"dandanpaly_episode_id"`
 	Title               string   `json:"title"`
 	Type                string   `json:"type"`         // 例如: "video", "image", "subtitle" 等
@@ -46,6 +48,7 @@ type Episode struct {
 	FileName            string   `json:"file_name"`
 	Subtitles           []string `json:"subtitles"`
 	FilePath            string   `json:"file_path"`
+	LastWatchedAt       int      `json:"last_watched_at"`
 }
 
 type DanmakuInfo struct {
@@ -139,16 +142,17 @@ func GetBangumiContentsByBangumiID(c echo.Context) error {
 			return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to Handing Path"})
 		}
 		respBangumiInfo = BangumiInfo{
-			ID:            bangumiInfo.BangumiSubjectID,
-			Title:         bangumiInfo.Name,
-			Directory:     relativePath,
-			ImageURL:      fmt.Sprintf("https://api.bgm.tv/v0/subjects/%d/image?type=large", bangumiInfo.BangumiSubjectID),
-			Summary:       bangumiInfo.Summary,
-			RateScore:     bangumiInfo.RateScore,
-			TotalEpisodes: bangumiInfo.TotalEpisodes,
-			AirDate:       bangumiInfo.AirDate,
-			Platform:      bangumiInfo.Platform,
-			Episodes:      episodesJSON,
+			ID:                   bangumiInfo.BangumiSubjectID,
+			Title:                bangumiInfo.Name,
+			Directory:            relativePath,
+			ImageURL:             fmt.Sprintf("https://api.bgm.tv/v0/subjects/%d/image?type=large", bangumiInfo.BangumiSubjectID),
+			Summary:              bangumiInfo.Summary,
+			RateScore:            bangumiInfo.RateScore,
+			TotalEpisodes:        bangumiInfo.TotalEpisodes,
+			AirDate:              bangumiInfo.AirDate,
+			Platform:             bangumiInfo.Platform,
+			LastWatchedEpisodeID: bangumiInfo.LastWatchedEpisodeID,
+			Episodes:             episodesJSON,
 		}
 
 	}
@@ -202,6 +206,7 @@ func GetEpisodeInfoByID(c echo.Context) error {
 
 	resEpisodeINfo := Episode{
 		ID:                  episodeInfo.ID,
+		EpisodeNo:           episodeInfo.EpisodeNo,
 		DandanplayEpisodeID: episodeInfo.EpisodeDandanplayID,
 		Title:               episodeInfo.Title,
 		Type:                episodeInfo.TypeDescription,
@@ -209,6 +214,7 @@ func GetEpisodeInfoByID(c echo.Context) error {
 		FileName:            episodeInfo.FileName,
 		FilePath:            episodeInfo.FilePath,
 		Subtitles:           subtitles,
+		LastWatchedAt:       episodeInfo.LastWatchedAt,
 	}
 
 	return c.JSON(http.StatusOK, resEpisodeINfo)
@@ -265,6 +271,53 @@ func GetDanmakuByDandanplayEpisodeID(c echo.Context) error {
 
 	response := DanmakuInfo{
 		Danmakus: bulletOptions,
+	}
+
+	return c.JSON(http.StatusOK, response)
+}
+
+func GetDanmakuForDplayerByDandanplayEpisodeID(c echo.Context) error {
+	id, err := strconv.Atoi(c.QueryParam("id"))
+	log.Print("id ", id)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid episode ID"})
+	}
+
+	episodeInfo, err := episodeusecase.GetEpisodeInfoById(id)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to get episode info"})
+	}
+	danmakuFromDandanplay, err := dandanplay.FetchDanmakuFromDandanplay(episodeInfo.EpisodeDandanplayID)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to fetch danmaku"})
+	}
+
+	// Convert to Dplayer format
+	dplayerData := make([][]interface{}, 0)
+	if danmakuFromDandanplay.Comments != nil {
+		for _, d := range danmakuFromDandanplay.Comments {
+			parts := strings.Split(d.P, ",")
+			if len(parts) < 3 {
+				continue
+			}
+
+			time, _ := strconv.ParseFloat(parts[0], 64)
+			color, _ := strconv.ParseInt(parts[2], 10, 64)
+
+			// DPlayer format ：[time(second），0，font color, author name，content]
+			dplayerData = append(dplayerData, []interface{}{
+				time,        // time
+				0,           // fixed value 0
+				int(color),  // color
+				"anonymous", // author name
+				d.M,         // content
+			})
+		}
+	}
+
+	response := map[string]interface{}{
+		"code": 0,
+		"data": dplayerData,
 	}
 
 	return c.JSON(http.StatusOK, response)
