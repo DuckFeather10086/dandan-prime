@@ -9,6 +9,7 @@ import (
 	"github.com/duckfeather10086/dandan-prime/config"
 	"github.com/duckfeather10086/dandan-prime/controllers"
 	"github.com/duckfeather10086/dandan-prime/database"
+	"github.com/duckfeather10086/dandan-prime/internal/dandanplay"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 )
@@ -22,6 +23,7 @@ func main() {
 	if err := config.InitConfig(); err != nil {
 		log.Fatalf("Failed to initialize config: %v", err)
 	}
+	dandanplay.InitDandanplayClient(config.DANDANPLAY_API_APP_ID, config.DANDANPLAY_API_APP_SECRET)
 
 	e := echo.New()
 

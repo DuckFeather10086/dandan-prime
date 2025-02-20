@@ -17,6 +17,8 @@ var PORT int
 var HLS_HOST_PROTOCOL string
 var HLS_HOST_NAME string
 var HLS_CACHE_PATH string
+var DANDANPLAY_API_APP_ID string
+var DANDANPLAY_API_APP_SECRET string
 
 type Config struct {
 	MediaLibraryRootPath   string   `json:"media_library_root_path"`
@@ -26,6 +28,8 @@ type Config struct {
 	Port                   int      `json:"port"`
 	HLSHostName            string   `json:"hls_host_name"`
 	HLSHostProtocol        string   `json:"hls_host_protocol"`
+	DandanPlayAppID        string   `json:"dandan_play_app_id"`
+	DandanPlayAppSecret    string   `json:"dandan_play_app_secret"`
 }
 
 func InitConfig() error {
@@ -49,6 +53,9 @@ func InitConfig() error {
 	HLS_HOST_NAME = config.HLSHostName
 	HLS_HOST_PROTOCOL = config.HLSHostProtocol
 	HLS_CACHE_PATH = config.HLSCachePath
+
+	DANDANPLAY_API_APP_ID = config.DandanPlayAppID
+	DANDANPLAY_API_APP_SECRET = config.DandanPlayAppSecret
 
 	return nil
 }
