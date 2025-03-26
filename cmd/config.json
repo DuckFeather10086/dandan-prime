@@ -1,5 +1,5 @@
 {
-    "media_library_root_path": "/WDBLUE_1/Bangumis",
+    "media_library_root_path": "YOUR/PATH/TO/MEDIA/LIBRARY",
     "allowed_video_extensions": [
         ".mp4",
         ".mkv",
@@ -11,7 +11,9 @@
         ".mpeg"
     ],
     "use_hls": true,
-    "hls_cache_path": "cache",
-    "hls_host_name": "10.0.0.232:1234",
-    "hls_host_protocol": "http"
+    "hls_cache_path": "YOUR/PATH/TO/MEDIA/LIBRARY",
+    "hls_host_name": "YOUR/PATH/TO/HOST/NAME",
+    "hls_host_protocol": "http",
+    "dandan_play_app_id": "your_dandan_play_app_id",
+    "dandan_play_app_secret": "your_dandan_play_app_secret"
 }
