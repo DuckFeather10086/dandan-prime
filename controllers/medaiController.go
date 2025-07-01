@@ -37,11 +37,13 @@ func GetHlsEnable(c echo.Context) error {
 }
 
 func UpdateMediaLibrary(c echo.Context) error {
+	forceUpdate := c.QueryParam("force_update")
+	log.Println("forceUpdate", forceUpdate)
 	if err := episodeusecase.ScanAndSaveMedia(config.MEDIA_LIBRARY_ROOT_PATH); err != nil {
 		log.Printf("Error scanning and matching media: %v", err)
 	}
 
-	if err := episodeusecase.ScanAndMatchMedia(config.MEDIA_LIBRARY_ROOT_PATH); err != nil {
+	if err := episodeusecase.ScanAndMatchMedia(config.MEDIA_LIBRARY_ROOT_PATH, forceUpdate == "true"); err != nil {
 		log.Printf("Error scanning and matching media: %v", err)
 	}
 

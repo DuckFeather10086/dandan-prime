@@ -306,18 +306,19 @@ func GetDanmakuForDplayerByDandanplayEpisodeID(c echo.Context) error {
 
 			// DPlayer format ：[time(second），0，font color, author name，content]
 			dplayerData = append(dplayerData, []interface{}{
-				time,        // time
-				0,           // fixed value 0
-				int(color),  // color
-				"anonymous", // author name
-				d.M,         // content
+				time,                     // time
+				0,                        // fixed value 0
+				strconv.Itoa(int(color)), // color
+				"anonymous",              // author name
+				d.M,                      // content
 			})
 		}
 	}
 
 	response := map[string]interface{}{
-		"code": 0,
-		"data": dplayerData,
+		"code":    0,
+		"data":    dplayerData,
+		"version": 3,
 	}
 
 	return c.JSON(http.StatusOK, response)

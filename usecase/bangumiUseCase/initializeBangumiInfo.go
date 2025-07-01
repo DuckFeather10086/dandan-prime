@@ -89,9 +89,67 @@ func InitializeBangumiInfo() error {
 			Update("air_date", fetchedBangumiInfo.Date).
 			Update("platform", fetchedBangumiInfo.Platform)
 
-		database.DB.Model(&database.EpisodeInfo{}).Where("dandanplay_bangumi_id = ?", dandanPlayAnimeID).Update("bangumi_bangumi_id", fetchedBangumiInfo.ID).Update("bangumi_matched", true)
+		if fetchedBangumiInfo.ID != 0 {
+			database.DB.Model(&database.EpisodeInfo{}).Where("dandanplay_bangumi_id = ?", dandanPlayAnimeID).Update("bangumi_bangumi_id", fetchedBangumiInfo.ID).Update("bangumi_matched", true)
+		}
 
 		time.Sleep(time.Duration(0.2 * float64(time.Second)))
+	}
+
+	if err := updateMissingBangumiIDs(); err != nil {
+		log.Printf("Failed to update missing bangumi IDs: %v", err)
+	}
+
+	return nil
+}
+
+func updateMissingBangumiIDs() error {
+	// Find all dandanplay_bangumi_id groups that have episodes with bangumi_bangumi_id = 0
+	var dandanplayGroups []struct {
+		DandanplayBangumiID int `gorm:"column:dandanplay_bangumi_id"`
+	}
+
+	err := database.DB.Model(&database.EpisodeInfo{}).
+		Select("dandanplay_bangumi_id").
+		Where("dandanplay_bangumi_id != 0 AND bangumi_bangumi_id = 0").
+		Group("dandanplay_bangumi_id").
+		Find(&dandanplayGroups).Error
+
+	if err != nil {
+		return fmt.Errorf("failed to find dandanplay groups: %v", err)
+	}
+
+	for _, group := range dandanplayGroups {
+		// Try to find a non-zero bangumi_bangumi_id for this dandanplay_bangumi_id
+		var targetBangumiID int
+		err := database.DB.Model(&database.EpisodeInfo{}).
+			Select("bangumi_bangumi_id").
+			Where("dandanplay_bangumi_id = ? AND bangumi_bangumi_id != 0", group.DandanplayBangumiID).
+			Limit(1).
+			Pluck("bangumi_bangumi_id", &targetBangumiID).Error
+
+		if err == nil && targetBangumiID != 0 {
+			// Found a valid bangumi_bangumi_id, update all episodes with the same dandanplay_bangumi_id
+			err = database.DB.Model(&database.EpisodeInfo{}).
+				Where("dandanplay_bangumi_id = ? AND bangumi_bangumi_id = 0", group.DandanplayBangumiID).
+				Updates(map[string]interface{}{
+					"bangumi_bangumi_id": targetBangumiID,
+					"bangumi_matched":    true,
+				}).Error
+
+			if err != nil {
+				log.Printf("Failed to update episodes for dandanplay_bangumi_id %d: %v", group.DandanplayBangumiID, err)
+			}
+		} else {
+			// No valid bangumi_bangumi_id found for this dandanplay_bangumi_id, set is_episode_matched to false
+			err = database.DB.Model(&database.EpisodeInfo{}).
+				Where("dandanplay_bangumi_id = ?", group.DandanplayBangumiID).
+				Update("bangumi_matched", false).Error
+
+			if err != nil {
+				log.Printf("Failed to update bangumi_matched for dandanplay_bangumi_id %d: %v", group.DandanplayBangumiID, err)
+			}
+		}
 	}
 
 	return nil

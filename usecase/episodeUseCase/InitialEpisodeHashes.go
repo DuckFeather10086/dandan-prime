@@ -77,17 +77,27 @@ func ScanAndSaveMedia(rootPath string) error {
 	})
 }
 
-func ScanAndMatchMedia(rootPath string) error {
+func ScanAndMatchMedia(rootPath string, forceUpdate bool) error {
 	var totalUnmatchedEpisodes int64
+	var query = database.DB.Model(&database.EpisodeInfo{})
 
-	err := database.DB.Model(&database.EpisodeInfo{}).Where("info_matched =?", false).Count(&totalUnmatchedEpisodes).Error
+	// If forceUpdate is not provided or false, only match unmatched episodes
+	if !forceUpdate {
+		query = query.Where("info_matched = ?", false)
+	}
+
+	err := query.Count(&totalUnmatchedEpisodes).Error
 	if err != nil {
 		return err
 	}
 
 	for i := int64(0); i < totalUnmatchedEpisodes/32+1; i += 1 {
 		var episodes []database.EpisodeInfo
-		if err := database.DB.Where("info_matched =?", false).Limit(BATCH_SIZE).Offset(int(i) * BATCH_SIZE).Find(&episodes).Error; err != nil {
+		query := database.DB
+		if !forceUpdate {
+			query = query.Where("info_matched = ?", false)
+		}
+		if err := query.Limit(BATCH_SIZE).Offset(int(i) * BATCH_SIZE).Find(&episodes).Error; err != nil {
 			return err
 		}
 
@@ -110,7 +120,7 @@ func ScanAndMatchMedia(rootPath string) error {
 					log.Printf("Failed to convert episode number: %v", err)
 					continue
 				}
-				database.UpdateEpisodeInfoByHash(result.FileHash, &database.EpisodeInfo{
+				updateData := database.EpisodeInfo{
 					DandanplayBangumiID: result.Result.AnimeID,
 					BangumiTitle:        result.Result.AnimeTitle,
 					Title:               result.Result.EpisodeTitle,
@@ -119,7 +129,8 @@ func ScanAndMatchMedia(rootPath string) error {
 					EpisodeDandanplayID: result.Result.EpisodeID,
 					EpisodeNo:           episodeNO,
 					InfoMatched:         true,
-				})
+				}
+				database.UpdateEpisodeInfoByHash(result.FileHash, &updateData)
 			} else {
 				err := database.UpdateEpisodeInfoByHash(result.FileHash, &database.EpisodeInfo{
 					InfoMatched: true,
