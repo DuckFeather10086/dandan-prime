@@ -125,3 +125,104 @@ dandan-prime 是一个支持弹幕和 HLS 推流的本地流媒体服务器。�
 - [Bangumi API](https://github.com/bangumi/api/)
 - [dandanplay-libraryindex](https://github.com/kaedei/dandanplay-libraryindex)
 - [ffmpeg](https://ffmpeg.org/)  <!-- 添加 ffmpeg 链接 -->
+---
+
+## Matching against bangumi.tv directly
+
+Metadata used to be reached through dandanplay: a file hash went to its
+`/match` endpoint for an anime id, and that anime's `OnlineDatabases` link gave
+the bangumi.tv subject id the metadata actually came from. That made
+dandanplay's granularity the library's granularity, which breaks on film
+series — all seven *Kara no Kyoukai* films share one dandanplay anime id, while
+bangumi.tv models them as seven separate subjects. The hardcoded Evangelion id
+fixes in `usecase/bangumiUseCase` were the same failure, patched one id at a
+time. A file whose hash is absent from dandanplay's index also never matched,
+and no amount of rescanning helped.
+
+`usecase/matchUseCase` searches bangumi.tv directly instead, and asks an
+OpenAI-compatible model to choose among the candidates it returns. The model is
+used for one judgement only — which candidate a directory refers to, including
+across languages, where character similarity is useless (`Dungeon Meshi` vs
+`ダンジョン飯` overlaps at ~0, yet bangumi.tv's own search ranks it first). It is
+never a metadata source: any subject id it returns that was not in the
+candidate list is rejected before anything is written.
+
+Resolution happens per top-level directory but is assigned per file, so a
+directory holding a film series maps each film to its own subject.
+
+Hashes are still computed at scan time and still used for danmaku, which is the
+one thing dandanplay is authoritative about.
+
+### Configuration
+
+`config.json` gains two optional fields:
+
+```json
+{
+    "llm_base_url": "http://127.0.0.1:8650/v1",
+    "llm_model": "gemini-3.8-flash"
+}
+```
+
+The API key is read from the environment, never from `config.json`, so it stays
+out of this repository:
+
+| Variable | Purpose |
+|---|---|
+| `DANDAN_LLM_API_KEY` | Bearer token for the endpoint. Required. |
+| `DANDAN_LLM_BASE_URL` | Overrides `llm_base_url`. |
+| `DANDAN_LLM_MODEL` | Overrides `llm_model`. |
+
+Any OpenAI-compatible endpoint works. Under systemd, keep them in a 0600 file
+loaded with `EnvironmentFile=-%h/.config/dandan-prime/env`.
+
+With no key configured the scan still runs; directories are simply left
+unresolved rather than failing.
+
+### Usage
+
+```sh
+curl -X POST localhost:1234/api/bangumi/media-library    # scan + hash
+curl -X POST localhost:1234/api/bangumi/resolve          # match to bangumi.tv
+```
+
+`resolve` accepts `?limit=N` to work through a large library in batches, and
+`?force=true` to re-resolve directories that already have a subject id. It
+returns counts of what it did, including the tokens spent.
+
+### Fixing a bad match
+
+Put a `.bangumi-id` file in the directory. It is honoured before the model is
+consulted, so a correction survives every later rescan:
+
+```
+# whole directory is one subject
+1671
+```
+
+```
+# one line per file, for a film collection
+[SumiSora][Kara_no_Kyoukai][01].mkv	233
+[SumiSora][Kara_no_Kyoukai][02].mkv	812
+```
+
+File names are relative to the directory holding the `.bangumi-id`.
+
+### Filename parsing
+
+`usecase/matchUseCase/parse.go` is deliberately shallow. Rule-based title
+extraction was tried against a 189-directory library and leaked in both
+directions: picking the longest bracket block yields the release group name
+(`Nekomoe kissaten&VCB-Studio`), and filtering technical tags yields the
+leftovers (`HEVC-YUV420P10`). So the keyword it produces is only used to fetch
+candidates — a bad keyword costs one extra round trip, never a wrong match,
+because the model is shown the raw directory name. Episode *numbers* stay
+rule-based, since they are unambiguous once the technical tokens are out of the
+way.
+
+To inspect what the parser cannot read, against your own library:
+
+```sh
+sqlite3 cmd/media_library.db 'select file_name from episode_infos' > /tmp/corpus.txt
+DANDAN_PARSE_CORPUS=/tmp/corpus.txt go test ./usecase/matchUseCase/ -run Corpus -v
+```

@@ -8,9 +8,15 @@ import (
 
 type EpisodeInfo struct {
 	gorm.Model
-	FileName            string `gorm:"size:255;index"`
-	Title               string `gorm:"size:255"`
-	Hash                string `gorm:"size:32;uniqueIndex"`
+	FileName string `gorm:"size:255;index;uniqueIndex:idx_episode_location,priority:2"`
+	Title    string `gorm:"size:255"`
+	// Hash is the MD5 of the first 16MB, the digest dandanplay matches on. It
+	// is NOT unique: BD rips from the same release can carry an identical
+	// 16MB+ header of attached fonts and chapters, so a 41MB creditless-OP
+	// file and a 706MB OVA episode hash the same. A unique index here dropped
+	// 88 real files from a 4331-file library, and it is also why those files
+	// could never match correctly against dandanplay.
+	Hash                string `gorm:"size:32;index"`
 	BangumiName         string `gorm:"size:255;index"`
 	Season              int    `gorm:"index"`
 	EpisodeNo           int    `gorm:"index;not null;default:0"`
@@ -28,10 +34,11 @@ type EpisodeInfo struct {
 	Subtitles           string `gorm:"type:text"`
 	Length              int
 	LastWatchedAt       int
-	InfoMatched         bool   `gorm:"default:false"`
-	BangumiMatched      bool   `gorm:"default:false"`
-	SubtitleMatched     bool   `gorm:"default:false"`
-	FilePath            string `gorm:"size:512;index"`
+	InfoMatched         bool `gorm:"default:false"`
+	BangumiMatched      bool `gorm:"default:false"`
+	SubtitleMatched     bool `gorm:"default:false"`
+	// A file's location is what actually identifies it.
+	FilePath string `gorm:"size:512;index;uniqueIndex:idx_episode_location,priority:1"`
 }
 
 type BangumiInfo struct {

@@ -6,8 +6,45 @@ package constants
 const (
 	BANGUMI_API_HOST            = "https://api.bgm.tv/v0"
 	BANGUMI_API_SUBJECT_DETAILS = "/subjects"
-	BANGUMI_API_EPISODES        = "/v0/episodes"
+	BANGUMI_API_EPISODES        = "/episodes"
+	BANGUMI_API_SEARCH_SUBJECTS = "/search/subjects"
+
+	// bangumi.tv asks every client to identify itself; requests without a
+	// recognisable User-Agent get rate limited harder.
+	BANGUMI_API_USER_AGENT = "duckfeather10086/dandan-prime"
+
+	// bangumi.tv subject types. Filtering a search to ANIME keeps books,
+	// music and games out of the candidate list, which is what a media library
+	// wants almost always -- but not quite always: tokusatsu (Kamen Rider) and
+	// concert footage are filed under REAL, so a search restricted to ANIME
+	// returns nothing at all for them.
+	SUBJECT_TYPE_BOOK  = 1
+	SUBJECT_TYPE_ANIME = 2
+	SUBJECT_TYPE_MUSIC = 3
+	SUBJECT_TYPE_GAME  = 4
+	SUBJECT_TYPE_REAL  = 6
 )
+
+// SubjectTypesVideo is the widened filter used when an anime-only search comes
+// back empty: everything that can plausibly be a video file in a media
+// library, still excluding books and games.
+var SubjectTypesVideo = []int{SUBJECT_TYPE_ANIME, SUBJECT_TYPE_REAL, SUBJECT_TYPE_MUSIC}
+
+// BangumiSearchSubject is one candidate row from /v0/search/subjects. It is
+// deliberately narrower than BangumiSubjectResponse: the resolver only needs
+// enough to tell candidates apart, and every extra field is prompt tokens.
+type BangumiSearchSubject struct {
+	ID       int    `json:"id"`
+	Name     string `json:"name"`
+	NameCN   string `json:"name_cn"`
+	Date     string `json:"date"`
+	Platform string `json:"platform"`
+}
+
+type BangumiSearchResponse struct {
+	Total int                    `json:"total"`
+	Data  []BangumiSearchSubject `json:"data"`
+}
 
 type BangumiSubjectResponse struct {
 	Date     string `json:"date"`

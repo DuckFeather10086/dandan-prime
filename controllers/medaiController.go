@@ -11,6 +11,7 @@ import (
 	"github.com/duckfeather10086/dandan-prime/config"
 	bangumiusecase "github.com/duckfeather10086/dandan-prime/usecase/bangumiUseCase"
 	episodeusecase "github.com/duckfeather10086/dandan-prime/usecase/episodeUseCase"
+	matchusecase "github.com/duckfeather10086/dandan-prime/usecase/matchUseCase"
 	"github.com/labstack/echo/v4"
 )
 
@@ -58,4 +59,21 @@ func UpdateMediaLibrary(c echo.Context) error {
 	}
 
 	return nil
+}
+
+// ResolveBangumiInfo matches library directories to bangumi.tv subjects
+// directly, without the dandanplay hash-match detour. It is exposed
+// separately from UpdateMediaLibrary so a scan and a re-match can be run
+// independently while the two matchers coexist.
+func ResolveBangumiInfo(c echo.Context) error {
+	force := c.QueryParam("force") == "true"
+	limit, _ := strconv.Atoi(c.QueryParam("limit"))
+
+	stats, err := matchusecase.ResolveMediaLibrary(force, limit)
+	if err != nil {
+		log.Printf("Error resolving bangumi info: %v", err)
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+	}
+
+	return c.JSON(http.StatusOK, stats)
 }
