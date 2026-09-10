@@ -181,14 +181,29 @@ unresolved rather than failing.
 
 ### Usage
 
-```sh
-curl -X POST localhost:1234/api/bangumi/media-library    # scan + hash
-curl -X POST localhost:1234/api/bangumi/resolve          # match to bangumi.tv
-```
+`POST /api/bangumi/media-library` runs the whole chain. Each stage is also its
+own endpoint, because they have very different costs and you rarely want all
+of them:
 
-`resolve` accepts `?limit=N` to work through a large library in batches, and
-`?force=true` to re-resolve directories that already have a subject id. It
-returns counts of what it did, including the tokens spent.
+| Endpoint | Cost | Does |
+|---|---|---|
+| `media-library` | | The four below, in order |
+| `episode-numbers` | free | Re-derives episode numbers from file names |
+| `resolve` | LLM | Matches directories to bangumi.tv subjects |
+| `episode-metadata` | bangumi.tv only | Per-episode titles and summaries |
+
+All take `?force=true` to redo work already done; `resolve` also takes
+`?limit=N` to work through a large library in batches. `resolve` returns
+counts of what it did, including the tokens spent.
+
+`episode-numbers` exists so that improving the file-name parser does not mean
+re-resolving the library and paying for the LLM calls again — episode numbers
+come from the names, not from the model, so they can be recomputed offline.
+
+Danmaku still needs dandanplay, and `media-library` asks it for episode ids
+when `dandan_play_app_id` and `dandan_play_app_secret` are set. Nothing else
+depends on it: without credentials the library builds normally and only
+danmaku is missing.
 
 ### Fixing a bad match
 
