@@ -30,6 +30,12 @@ func UpdateEpisodeInfo(episode *EpisodeInfo) error {
 	return DB.Model(episode).Updates(episode).Error
 }
 
+// UpdateEpisodeInfoByID is the safe way to write to one episode. Hash is no
+// longer unique, so UpdateEpisodeInfoByHash can touch several rows.
+func UpdateEpisodeInfoByID(id uint, episode *EpisodeInfo) error {
+	return DB.Model(&EpisodeInfo{}).Where("id = ?", id).Updates(episode).Error
+}
+
 func UpdateEpisodeInfoByHash(hash string, episode *EpisodeInfo) error {
 	return DB.Model(&EpisodeInfo{}).Where("hash = ?", hash).Updates(episode).Error
 }
@@ -38,9 +44,20 @@ func DeleteEpisodeInfoByHash(hash string) error {
 	return DB.Where("hash =?", hash).Delete(&EpisodeInfo{}).Error
 }
 
-func CheckFileExists(fileName string) (bool, error) {
+// CheckFileExists reports whether a file at this exact location is already
+// known.
+//
+// It takes the directory as well as the name on purpose: keying on the base
+// name alone silently drops every file whose name repeats elsewhere in the
+// library, and release layouts repeat names constantly -- four different
+// "Menu.mkv", or the same episode present in both a TV folder and a batch
+// folder. Those files were skipped by the scanner and never appeared in the
+// library at all.
+func CheckFileExists(dirPath string, fileName string) (bool, error) {
 	var count int64
-	err := DB.Model(&EpisodeInfo{}).Where("file_name =?", fileName).Count(&count).Error
+	err := DB.Model(&EpisodeInfo{}).
+		Where("file_path = ? AND file_name = ?", dirPath, fileName).
+		Count(&count).Error
 	if err == gorm.ErrRecordNotFound {
 		return false, nil
 	}

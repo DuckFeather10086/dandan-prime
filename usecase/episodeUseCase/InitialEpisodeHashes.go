@@ -35,10 +35,18 @@ func ScanAndSaveMedia(rootPath string) error {
 			return nil
 		}
 
+		// AppleDouble sidecars: macOS writes a 4KB "._<name>" stub next to every
+		// file it touches on a non-HFS volume. They carry the video extension,
+		// so without this they get hashed and filed as episodes that can never
+		// match anything.
+		if strings.HasPrefix(filepath.Base(path), "._") {
+			return nil
+		}
+
 		ext := strings.ToLower(filepath.Ext(path))
 		for _, allowedExt := range allowedExtensionsVideo {
 			if ext == allowedExt {
-				fileExists, err := database.CheckFileExists(filepath.Base(path))
+				fileExists, err := database.CheckFileExists(filepath.Dir(path), filepath.Base(path))
 				if err != nil {
 					return fmt.Errorf("error checking file existence for %s: %v", path, err)
 				}
@@ -60,13 +68,13 @@ func ScanAndSaveMedia(rootPath string) error {
 				}
 
 				// Check if the episode already exists in the database
-				_, err = database.GetEpisodeInfoByHash(hash)
-				if err == nil {
-					database.UpdateEpisodeInfoByHash(hash, episode)
-				} else {
-					if err := database.CreateEpisodeInfo(episode); err != nil {
-						return fmt.Errorf("error saving episode info for %s: %v", path, err)
-					}
+				// Existence was already decided by location above, and the hash
+				// is not unique, so this is a plain insert. A failure is logged
+				// rather than returned: one bad file used to abort the whole
+				// walk and leave the rest of the library unscanned.
+				if err := database.CreateEpisodeInfo(episode); err != nil {
+					log.Printf("scan: error saving episode info for %s: %v", path, err)
+					break
 				}
 
 				fmt.Printf("Saved new episode: %s\n", path)
@@ -251,8 +259,12 @@ func CalculateFileHash(filePath string) (string, error) {
 	hash := md5.New()
 	buffer := make([]byte, 16*1024*1024) // 16MB buffer
 
-	n, err := file.Read(buffer)
-	if err != nil && err != io.EOF {
+	// io.ReadFull, not file.Read: a single Read is allowed to come back short,
+	// and a short read yields a different digest for the same file, which
+	// dandanplay then never matches. Only a genuinely shorter file is allowed
+	// to produce fewer bytes.
+	n, err := io.ReadFull(file, buffer)
+	if err != nil && err != io.EOF && err != io.ErrUnexpectedEOF {
 		return "", err
 	}
 	hash.Write(buffer[:n])
