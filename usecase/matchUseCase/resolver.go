@@ -621,3 +621,100 @@ func relativeName(dir string, ep database.EpisodeInfo) string {
 	}
 	return rel
 }
+
+// BackfillEpisodeNumbers re-derives episode numbers from file names for rows
+// that do not have one.
+//
+// Episode numbers are written during resolution, but they come from the file
+// name rather than from bangumi.tv or the model, so an improvement to the
+// parser should not require re-resolving the library and spending the LLM
+// budget again. This applies the current parser on its own: no network, no
+// model, idempotent.
+//
+// force also revisits rows that already have a number, for when the parser
+// changed its mind rather than merely learned something new.
+func BackfillEpisodeNumbers(force bool) (int, error) {
+	query := database.DB.Model(&database.EpisodeInfo{})
+	if !force {
+		query = query.Where("episode_no = 0")
+	}
+
+	var episodes []database.EpisodeInfo
+	if err := query.Find(&episodes).Error; err != nil {
+		return 0, err
+	}
+
+	updated := 0
+	for _, episode := range episodes {
+		number, ok := EpisodeNumber(episode.FileName)
+		if !ok || number == episode.EpisodeNo {
+			continue
+		}
+		if err := database.UpdateEpisodeInfoByID(episode.ID, &database.EpisodeInfo{EpisodeNo: number}); err != nil {
+			log.Printf("backfill: %s: %v", episode.FileName, err)
+			continue
+		}
+		updated++
+	}
+
+	// A film has no number in its file name because there is nothing to
+	// number. Left at zero it lands in the season page's "unknown" bucket and
+	// renders as bonus material, which is wrong for the feature itself.
+	films, err := numberSingleEpisodeWorks(force)
+	if err != nil {
+		return updated, err
+	}
+	updated += films
+
+	log.Printf("backfill: set an episode number on %d rows (%d of them single-episode works)", updated, films)
+	return updated, nil
+}
+
+// numberSingleEpisodeWorks assigns episode 1 to a subject whose library
+// holds exactly one feature file for it.
+//
+// The obvious test -- bangumi.tv's total_episodes -- does not work: it counts
+// bonus entries, so 言の葉の庭, a single film, reports 2. Counting the feature
+// files actually present is both simpler and self-evident: if a subject has
+// one feature file and that file carries no number, it is that subject's only
+// episode.
+func numberSingleEpisodeWorks(force bool) (int, error) {
+	var episodes []database.EpisodeInfo
+	query := database.DB.Where("bangumi_bangumi_id != 0")
+	if !force {
+		query = query.Where("episode_no = 0")
+	}
+	if err := query.Find(&episodes).Error; err != nil {
+		return 0, err
+	}
+
+	// Count the feature files per subject across the whole library, not just
+	// the rows selected above, so a subject that already has numbered
+	// episodes is not mistaken for a film.
+	var all []database.EpisodeInfo
+	if err := database.DB.Where("bangumi_bangumi_id != 0").Find(&all).Error; err != nil {
+		return 0, err
+	}
+	features := map[int]int{}
+	for _, episode := range all {
+		if !IsExtra(episode.FileName) {
+			features[episode.BangumiBangumiID]++
+		}
+	}
+
+	updated := 0
+	for _, episode := range episodes {
+		if IsExtra(episode.FileName) || episode.EpisodeNo == 1 {
+			continue
+		}
+		if features[episode.BangumiBangumiID] != 1 {
+			continue
+		}
+		if err := database.UpdateEpisodeInfoByID(episode.ID, &database.EpisodeInfo{EpisodeNo: 1}); err != nil {
+			log.Printf("backfill: %s: %v", episode.FileName, err)
+			continue
+		}
+		updated++
+	}
+	return updated, nil
+}

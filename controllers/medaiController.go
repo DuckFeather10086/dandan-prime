@@ -9,7 +9,6 @@ import (
 	"strconv"
 
 	"github.com/duckfeather10086/dandan-prime/config"
-	bangumiusecase "github.com/duckfeather10086/dandan-prime/usecase/bangumiUseCase"
 	episodeusecase "github.com/duckfeather10086/dandan-prime/usecase/episodeUseCase"
 	matchusecase "github.com/duckfeather10086/dandan-prime/usecase/matchUseCase"
 	"github.com/labstack/echo/v4"
@@ -44,18 +43,33 @@ func UpdateMediaLibrary(c echo.Context) error {
 		log.Printf("Error scanning and matching media: %v", err)
 	}
 
-	if err := episodeusecase.ScanAndMatchMedia(config.MEDIA_LIBRARY_ROOT_PATH, forceUpdate == "true"); err != nil {
-		log.Printf("Error scanning and matching media: %v", err)
+	// dandanplay is now consulted only for the episode ids danmaku needs, and
+	// only if credentials are configured. It is no longer how the library
+	// learns what a file is, so a failure here costs danmaku, not metadata.
+	if config.DANDANPLAY_API_APP_ID != "" && config.DANDANPLAY_API_APP_SECRET != "" {
+		if err := episodeusecase.ScanAndMatchMedia(config.MEDIA_LIBRARY_ROOT_PATH, forceUpdate == "true"); err != nil {
+			log.Printf("Error matching episodes against dandanplay: %v", err)
+		}
+	} else {
+		log.Println("dandanplay credentials not configured; skipping danmaku id matching")
 	}
 
-	err := bangumiusecase.InitializeBangumiInfo()
-	if err != nil {
-		log.Printf("Error scanning and matching media: %v", err)
+	// Cheap and offline, so it runs before resolution: a parser improvement
+	// gets applied without spending the LLM budget on a re-resolve.
+	if _, err := matchusecase.BackfillEpisodeNumbers(forceUpdate == "true"); err != nil {
+		log.Printf("Error backfilling episode numbers: %v", err)
 	}
 
-	err = episodeusecase.ScanAndMatchSubtitles()
-	if err != nil {
-		log.Printf("Error scanning and matching media: %v", err)
+	if _, err := matchusecase.ResolveMediaLibrary(forceUpdate == "true", 0); err != nil {
+		log.Printf("Error resolving bangumi subjects: %v", err)
+	}
+
+	if err := episodeusecase.PopulateEpisodeMetadata(forceUpdate == "true"); err != nil {
+		log.Printf("Error populating episode metadata: %v", err)
+	}
+
+	if err := episodeusecase.ScanAndMatchSubtitles(); err != nil {
+		log.Printf("Error matching subtitles: %v", err)
 	}
 
 	return nil
@@ -65,6 +79,33 @@ func UpdateMediaLibrary(c echo.Context) error {
 // directly, without the dandanplay hash-match detour. It is exposed
 // separately from UpdateMediaLibrary so a scan and a re-match can be run
 // independently while the two matchers coexist.
+// BackfillEpisodeNumbers re-derives episode numbers from file names. Separate
+// from resolution because it needs neither the network nor the model.
+func BackfillEpisodeNumbers(c echo.Context) error {
+	force := c.QueryParam("force") == "true"
+
+	updated, err := matchusecase.BackfillEpisodeNumbers(force)
+	if err != nil {
+		log.Printf("Error backfilling episode numbers: %v", err)
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+	}
+
+	return c.JSON(http.StatusOK, map[string]int{"updated": updated})
+}
+
+// PopulateEpisodeMetadata fills in per-episode titles and summaries from
+// bangumi.tv for every subject in the library.
+func PopulateEpisodeMetadata(c echo.Context) error {
+	force := c.QueryParam("force") == "true"
+
+	if err := episodeusecase.PopulateEpisodeMetadata(force); err != nil {
+		log.Printf("Error populating episode metadata: %v", err)
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+	}
+
+	return c.NoContent(http.StatusNoContent)
+}
+
 func ResolveBangumiInfo(c echo.Context) error {
 	force := c.QueryParam("force") == "true"
 	limit, _ := strconv.Atoi(c.QueryParam("limit"))

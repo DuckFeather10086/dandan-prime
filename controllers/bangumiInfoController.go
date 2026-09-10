@@ -14,6 +14,7 @@ import (
 	"strings"
 
 	"github.com/duckfeather10086/dandan-prime/config"
+	"github.com/duckfeather10086/dandan-prime/database"
 	"github.com/duckfeather10086/dandan-prime/internal/dandanplay"
 	bangumiusecase "github.com/duckfeather10086/dandan-prime/usecase/bangumiUseCase"
 	episodeusecase "github.com/duckfeather10086/dandan-prime/usecase/episodeUseCase"
@@ -87,35 +88,46 @@ func GetBangumiContentsByBangumiID(c echo.Context) error {
 
 		episode := Episode{
 			ID:                  episodeInfo.ID,
+			EpisodeNo:           episodeInfo.EpisodeNo,
 			DandanplayEpisodeID: episodeInfo.EpisodeDandanplayID,
-			Title:               episodeInfo.Title,
+			Title:               episodeGroupTitle(episodeInfo),
 			Type:                episodeInfo.TypeDescription,
 			Introduction:        episodeInfo.Introduce,
 			FileName:            episodeInfo.FileName,
 			FilePath:            episodeInfo.FilePath,
+			LastWatchedAt:       episodeInfo.LastWatchedAt,
 			Subtitles:           subtitles,
 		}
 
-		if episodeInfo.EpisodeDandanplayID != 0 {
-			key := strconv.Itoa(episodeInfo.EpisodeDandanplayID)
+		// Group by episode number, not by dandanplay episode id.
+		//
+		// The id was the grouping key back when dandanplay identified every
+		// file, and it is now zero for anything matched through bangumi.tv --
+		// which put every episode in the library into the "unknown" bucket.
+		// The number is also what a viewer means by "the same episode": two
+		// rips of episode 3 belong together whether or not dandanplay knows
+		// either of them.
+		//
+		// Keys stay plain decimal integers on purpose. JavaScript enumerates
+		// integer-like object keys in ascending numeric order, so the frontend
+		// gets the episodes in order for free, and "unknown" -- not
+		// integer-like -- sorts after all of them.
+		if episodeInfo.EpisodeNo > 0 {
+			key := strconv.Itoa(episodeInfo.EpisodeNo)
 			episodeMap[key] = append(episodeMap[key], episode)
 		} else {
 			unknownEpisodes = append(unknownEpisodes, episode)
 		}
 	}
 
-	// Sort episodes in each array, putting those with subtitles first
+	// Within a group, the copy with subtitles comes first. sort.SliceStable
+	// with a file-name tiebreak so two rips of one episode keep a fixed order
+	// between requests instead of shuffling.
 	for key, episodes := range episodeMap {
-		sort.Slice(episodes, func(i, j int) bool {
-			return len(episodes[i].Subtitles) > len(episodes[j].Subtitles)
-		})
+		sortEpisodes(episodes)
 		episodeMap[key] = episodes
 	}
-
-	// Sort unknown episodes, putting those with subtitles first
-	sort.Slice(unknownEpisodes, func(i, j int) bool {
-		return len(unknownEpisodes[i].Subtitles) > len(unknownEpisodes[j].Subtitles)
-	})
+	sortEpisodes(unknownEpisodes)
 
 	// Add unknown episodes to the map with a special key
 	if len(unknownEpisodes) > 0 {
@@ -337,6 +349,30 @@ func DeleteBangumi(c echo.Context) error {
 	}
 
 	return c.NoContent(http.StatusNoContent)
+}
+
+// episodeGroupTitle is what the group heading shows. bangumi.tv episode
+// titles are filled in by PopulateEpisodeMetadata, but a subject can be
+// missing them, and extras have no episode entry at all -- so fall back to the
+// episode number and finally to the file name, rather than rendering a blank
+// heading.
+func episodeGroupTitle(episodeInfo database.EpisodeInfo) string {
+	if episodeInfo.Title != "" {
+		return episodeInfo.Title
+	}
+	if episodeInfo.EpisodeNo > 0 {
+		return fmt.Sprintf("第 %d 話", episodeInfo.EpisodeNo)
+	}
+	return episodeInfo.FileName
+}
+
+func sortEpisodes(episodes []Episode) {
+	sort.SliceStable(episodes, func(i, j int) bool {
+		if len(episodes[i].Subtitles) != len(episodes[j].Subtitles) {
+			return len(episodes[i].Subtitles) > len(episodes[j].Subtitles)
+		}
+		return episodes[i].FileName < episodes[j].FileName
+	})
 }
 
 func getDanmakuType(mode int) string {
