@@ -11,7 +11,6 @@ import (
 	"log"
 	"os"
 	"path/filepath"
-	"strconv"
 	"strings"
 
 	"math/rand"
@@ -123,19 +122,14 @@ func ScanAndMatchMedia(rootPath string, forceUpdate bool) error {
 
 		for _, result := range matchResp.Matches {
 			if result.Success {
-				episodeNO, err := strconv.Atoi(strings.TrimLeft(fmt.Sprintf("%04d", result.Result.EpisodeID%10000), "0"))
-				if err != nil {
-					log.Printf("Failed to convert episode number: %v", err)
-					continue
-				}
+				// Only the ids danmaku needs are taken from here. Titles,
+				// types and episode numbers used to be written from this
+				// response too, which is what made dandanplay's view of a file
+				// the library's view of it; bangumi.tv is the metadata source
+				// now, and episode numbers come from the file names.
 				updateData := database.EpisodeInfo{
 					DandanplayBangumiID: result.Result.AnimeID,
-					BangumiTitle:        result.Result.AnimeTitle,
-					Title:               result.Result.EpisodeTitle,
-					Type:                result.Result.Type,
-					TypeDescription:     result.Result.TypeDescription,
 					EpisodeDandanplayID: result.Result.EpisodeID,
-					EpisodeNo:           episodeNO,
 					InfoMatched:         true,
 				}
 				database.UpdateEpisodeInfoByHash(result.FileHash, &updateData)

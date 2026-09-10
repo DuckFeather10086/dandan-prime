@@ -110,7 +110,7 @@ func UpdateLastedWatched(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to update last watched info err:" + err.Error()})
 	}
 
-	err = bangumiUseCase.UpdateBangumiLastWatchedEpisode(episodeInfo.BangumiID, episodeInfo.ID)
+	err = bangumiUseCase.UpdateBangumiLastWatchedEpisode(episodeInfo.BangumiBangumiID, episodeInfo.ID)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to update bangumi last watched info err:" + err.Error()})
 	}

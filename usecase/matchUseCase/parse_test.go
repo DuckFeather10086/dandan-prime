@@ -93,3 +93,20 @@ func TestEpisodeNumberSurroundedByNonTechTags(t *testing.T) {
 		t.Errorf("EpisodeNumber(HEVC-10bit) = %d,true; want no match", got)
 	}
 }
+
+func TestEpisodeNumberWithReleaseVersion(t *testing.T) {
+	// "[01v2]" is episode 1, revision 2 -- a corrected re-upload. Without
+	// handling the suffix these files get no episode number at all and drop
+	// out of the season listing, which is how episodes 1 and 3 of Hibike!
+	// Euphonium 3 went missing while 2 and 4 showed up.
+	cases := map[string]int{
+		"[KitaujiSub] Hibike! Euphonium 3 [01v2][WebRip][HEVC_AAC][CHS_JP&CHT_JP].mkv": 1,
+		"[KitaujiSub] Hibike! Euphonium 3 [03v2][WebRip][HEVC_AAC][CHS_JP&CHT_JP].mkv": 3,
+		"[KitaujiSub] Hibike! Euphonium 3 [02][WebRip][HEVC_AAC][CHS_JP].mp4":          2,
+	}
+	for file, want := range cases {
+		if got, ok := EpisodeNumber(file); !ok || got != want {
+			t.Errorf("EpisodeNumber(%q) = %d,%v; want %d,true", file, got, ok, want)
+		}
+	}
+}

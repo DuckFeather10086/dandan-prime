@@ -46,7 +46,8 @@ var (
 	// them.
 	extraRe = regexp.MustCompile(`(?i)(\bmenu\d*\b|\breminder\d*\b|\bncop\d*\b|\bnced\d*\b|` +
 		`\bpreview\d*\b|\bcm\d*\b|\bpv\d*\b|\btrailer\d*\b|\bteaser\d*\b|\bmessage\d*\b|` +
-		`\bcreditless\b|\binterview\d*\b|\bmaking\b|\blogo\b|\baudio guide\b|\bstage greeting\b|` +
+		`\bcreditless\b|\binterview\d*\b|\biv\d+(_\d+)?\b|\bmaking\b|\blogo\b|\baudio guide\b|` +
+		`\bstage greeting\b|\bweb ?preview\b|\bmenu\b|` +
 		`特典|映像特典|菜单|预告|花絮|无字幕op|无字幕ed|drama|sound ?track|\bost\b)`)
 
 	epPatterns = []*regexp.Regexp{
@@ -59,6 +60,10 @@ var (
 		regexp.MustCompile(`[-–—]\s+(\d{1,4})(?:\s|$|\.)`),
 		regexp.MustCompile(`^\s*(\d{1,4})\s*[-–—.\s]`),
 	}
+
+	// "[01v2]" is episode 1, revision 2 -- a re-release correcting the first
+	// upload. The suffix is part of the release convention, not the number.
+	versionedNumRe = regexp.MustCompile(`(?i)^(\d{1,4})v\d{1,2}$`)
 
 	yearRe = regexp.MustCompile(`^(19|20)\d{2}$`)
 	crcRe  = regexp.MustCompile(`(?i)^[0-9a-f]{8}$`)
@@ -162,6 +167,9 @@ func EpisodeNumber(fileName string) (int, bool) {
 	cleaned := bracketRe.ReplaceAllStringFunc(base, func(m string) string {
 		inner := strings.Trim(m, "[]()【】（）")
 		t := strings.TrimSpace(inner)
+		if v := versionedNumRe.FindStringSubmatch(t); v != nil {
+			t = v[1]
+		}
 		if numRe.MatchString(t) && !yearRe.MatchString(t) {
 			return " - " + t + " "
 		}
