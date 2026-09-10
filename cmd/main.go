@@ -54,6 +54,7 @@ func main() {
 
 	e.POST("/api/playlist/:id", controllers.InitPlayListHandler)
 	e.POST("/api/bangumi/media-library", controllers.UpdateMediaLibrary)
+	e.POST("/api/bangumi/resolve", controllers.ResolveBangumiInfo)
 
 	e.PUT("/api/last_watched", controllers.UpdateLastedWatched)
 	e.PUT("/api/hls_enable", controllers.SetHlsEnable)

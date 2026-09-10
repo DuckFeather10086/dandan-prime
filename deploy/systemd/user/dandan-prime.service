@@ -1,0 +1,16 @@
+[Unit]
+Description=dandan-prime server
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/duckfeather/dandan-prime/cmd
+ExecStart=/home/duckfeather/dandan-prime/cmd/cmd
+Restart=on-failure
+RestartSec=5
+Environment=HOME=/home/duckfeather
+# LLM endpoint + key for the bangumi.tv matcher (0600, outside the public repo)
+EnvironmentFile=-/home/duckfeather/.config/dandan-prime/env
+
+[Install]
+WantedBy=default.target

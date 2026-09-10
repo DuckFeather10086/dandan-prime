@@ -1,3 +1,5 @@
 cmd/cache
 cmd/thumbnails
-cmd/media_library.dbcmd/config.json
+cmd/media_library.db
+cmd/config.json
+cmd/cmd
